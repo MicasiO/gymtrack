@@ -1,4 +1,5 @@
 #include "form.h"
+#include <ctype.h>
 #include <ncurses.h>
 #include <ncurses/form.h>
 #include <stdlib.h>

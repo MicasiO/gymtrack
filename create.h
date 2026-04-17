@@ -1,25 +1,12 @@
 #ifndef CREATE_H
 #define CREATE_H
 
-#include <ctype.h>
-#include <ncurses.h>
-#include <ncurses/form.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "routine.h"
+#include "utils.h"
 
-enum state {
-    STATE_MENU,
-    STATE_CREATE_TITLE,
-    STATE_CREATE_WORKOUT,
-    STATE_CREATE_CONTINUE,
-    STATE_QUIT,
-    STATE_START
-};
+typedef struct AppState AppState;
 
-enum state show_create_title(WINDOW* body_win, Routine** routines, Routine* draft);
-enum state show_create_workout(WINDOW* body_win, Routine** routines, Routine* draft);
-enum state show_create_continue(WINDOW* body_win, Routine** routines, Routine* draft);
+enum state show_create_title(AppState* app_state);
+enum state show_create_workout(AppState* app_state);
+enum state show_create_continue(AppState* app_state);
 
 #endif

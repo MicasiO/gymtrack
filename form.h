@@ -3,18 +3,18 @@
 
 #include <ncurses.h>
 #include <ncurses/form.h>
-#include "create.h"
+#include "utils.h"
 
 enum field_type { FIELD_STRING, FIELD_NUMBER, FIELD_CHECKBOX };
 
-typedef struct {
+typedef struct Field {
     FIELD* raw_field;
     WINDOW* win;
     char* title;
     enum field_type type;
 } Field;
 
-typedef struct {
+typedef struct Form {
     WINDOW* win;
     WINDOW* sub_win;
     FORM* raw_form;

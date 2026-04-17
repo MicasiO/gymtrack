@@ -1,7 +1,7 @@
 #ifndef EXERCISE_H
 #define EXERCISE_H
 
-typedef struct {
+typedef struct Exercise {
     char* title;
     int reps;
     int sets;

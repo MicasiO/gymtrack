@@ -1,16 +1,16 @@
 #include "create.h"
 #include <ncurses.h>
 #include <ncurses/form.h>
-#include <stdlib.h>
 #include "exercise.h"
 #include "form.h"
+#include "routine.h"
 #include "stb_ds.h"
 #include "utils.h"
 
-enum state show_create_title(WINDOW* body_win, Routine** routines, Routine* draft) {
-    draft->title = NULL;
-    draft->exercises = NULL;
-    wclear(body_win);
+enum state show_create_title(AppState* app_state) {
+    app_state->draft.title = NULL;
+    app_state->draft.exercises = NULL;
+    wclear(app_state->body_win);
     WINDOW* win = newwin(8, 44, 2, 0);
     box(win, 0, 0);
     curs_set(1);
@@ -28,23 +28,23 @@ enum state show_create_title(WINDOW* body_win, Routine** routines, Routine* draf
     wrefresh(form_win);
 
     enum state next_state;
-    handle_input_form(&form, &next_state, STATE_MENU, STATE_CREATE_WORKOUT);
+    handle_input_form(&form, &next_state, STATE_MENU_MAIN, STATE_CREATE_WORKOUT);
 
     if (next_state == STATE_CREATE_WORKOUT) {
-        draft->title = get_field_value(&form.fields[0]);
+        app_state->draft.title = get_field_value(&form.fields[0]);
     }
 
     delete_form(&form);
     delwin(form_win);
     delwin(win);
 
-    wrefresh(body_win);
+    wrefresh(app_state->body_win);
 
     return next_state;
 }
 
-enum state show_create_workout(WINDOW* body_win, Routine** routines, Routine* draft) {
-    wclear(body_win);
+enum state show_create_workout(AppState* app_state) {
+    wclear(app_state->body_win);
     WINDOW* win = newwin(14, 44, 2, 0);
     box(win, 0, 0);
     curs_set(1);
@@ -67,24 +67,20 @@ enum state show_create_workout(WINDOW* body_win, Routine** routines, Routine* dr
     handle_input_form(&form, &next_state, STATE_CREATE_TITLE, STATE_CREATE_CONTINUE);
 
     if (next_state == STATE_CREATE_CONTINUE) {
-        Exercise ex;
-        ex.title = get_field_value(&form.fields[0]);
-        ex.sets = atoi(get_field_value(&form.fields[1]));
-        ex.reps = atoi(get_field_value(&form.fields[2]));
-        arrput(draft->exercises, ex);
+        exercise_arr_add(&app_state->draft.exercises, form);
     }
 
     delete_form(&form);
     delwin(form_win);
     delwin(win);
 
-    wrefresh(body_win);
+    wrefresh(app_state->body_win);
 
     return next_state;
 }
 
-enum state show_create_continue(WINDOW* body_win, Routine** routines, Routine* draft) {
-    wclear(body_win);
+enum state show_create_continue(AppState* app_state) {
+    wclear(app_state->body_win);
     WINDOW* win = newwin(20, 40, 2, 0);
     box(win, 0, 0);
     curs_set(0);
@@ -95,14 +91,14 @@ enum state show_create_continue(WINDOW* body_win, Routine** routines, Routine* d
     init_form(win, form_win, &form, 1, 1);
 
     show_form(&form);
-    mvwprintw(win, 2, 2, "Workout title: %s", draft->title);
+    mvwprintw(win, 2, 2, "Workout title: %s", app_state->draft.title);
 
-    for (int i = 0; i < arrlen(draft->exercises); i++) {
+    for (int i = 0; i < arrlen(app_state->draft.exercises); i++) {
         if (i == 10) {
             mvwprintw(win, 14, 2, "...");
             break;
         }
-        Exercise ex = draft->exercises[arrlen(draft->exercises) - i - 1];
+        Exercise ex = app_state->draft.exercises[arrlen(app_state->draft.exercises) - i - 1];
         mvwprintw(win, 4 + i, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps);
     }
     mvwprintw(win, 17, 2, "[esc] finish | [enter] add exercise");
@@ -110,18 +106,17 @@ enum state show_create_continue(WINDOW* body_win, Routine** routines, Routine* d
     wrefresh(form_win);
 
     enum state next_state;
-    handle_input_form(&form, &next_state, STATE_MENU, STATE_CREATE_WORKOUT);
+    handle_input_form(&form, &next_state, STATE_MENU_MAIN, STATE_CREATE_WORKOUT);
 
-    if (next_state == STATE_MENU) {
-        arrput(*routines, *draft);
-        serialize(*routines);
+    if (next_state == STATE_MENU_MAIN) {
+        routine_arr_add(&app_state->routines, app_state->draft);
     }
 
     delete_form(&form);
     delwin(form_win);
     delwin(win);
 
-    wrefresh(body_win);
+    wrefresh(app_state->body_win);
 
     return next_state;
 }
