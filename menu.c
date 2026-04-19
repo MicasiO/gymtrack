@@ -10,13 +10,22 @@ void select_workout(AppState* app_state, enum state* next_state, const char ch, 
     if (idx > arrlen(app_state->routines)) {
         return;
     }
-    app_state->current = &app_state->routines[idx];
+
+    app_state->current = init_current_routine(&app_state->routines[idx]);
+
     *next_state = STATE_MENU_WORKOUT;
 }
 
 enum state show_main_menu(AppState* app_state) {
+    free_current_routine(app_state->current);
+    app_state->current = NULL;
     wclear(app_state->body_win);
-    WINDOW* win = newwin(15, 48, 2, 0);
+
+    WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
+    if (win == NULL) {
+        die("window");
+    }
+
     curs_set(0);
     keypad(win, true);
 
@@ -36,22 +45,22 @@ enum state show_main_menu(AppState* app_state) {
         }
 
         if (arrlen(app_state->routines) != 0) {
-            mvwprintw(win, 10, 2, "[1..5] select workout");
+            mvwprintw(win, WIN_HEIGHT - 4, 2, "[1..5] select workout");
         } else {
             mvwprintw(win, 5, 2, "No workouts");
         }
 
         if (arrlen(app_state->routines) > 5) {
             if (curr_idx > 0 && curr_idx + 5 < arrlen(app_state->routines)) {
-                mvwprintw(win, 11, 2, "[p]revious | [n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious | [n]ext");
             } else if (curr_idx > 0) {
-                mvwprintw(win, 11, 2, "[p]revious");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious");
             } else if (curr_idx + 5 < arrlen(app_state->routines)) {
-                mvwprintw(win, 11, 2, "[n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[n]ext");
             }
         }
 
-        mvwprintw(win, 12, 2, "[q]uit | [c]reate workout");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[q]uit | [c]reate workout");
 
         wrefresh(win);
 
@@ -96,11 +105,16 @@ enum state show_main_menu(AppState* app_state) {
 
 enum state show_workout_menu(AppState* app_state) {
     wclear(app_state->body_win);
-    WINDOW* win = newwin(21, 40, 2, 0);
+
+    WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
+    if (win == NULL) {
+        die("window");
+    }
+
     curs_set(0);
     keypad(win, true);
 
-    Routine current_routine = *app_state->current;
+    CurrentRoutine* current_routine = app_state->current;
 
     int curr_idx = 0;
     enum state next_state = -1;
@@ -108,27 +122,29 @@ enum state show_workout_menu(AppState* app_state) {
     while (next_state == -1) {
         wclear(win);
         box(win, 0, 0);
-        mvwprintw(win, 2, 2, "%s:", current_routine.title);
+        mvwprintw(win, 2, 2, "%s:", current_routine->title);
 
         for (int i = 0; i < 10; i++) {
-            Exercise ex = current_routine.exercises[i + curr_idx];
-            if (i + curr_idx >= arrlen(app_state->current->exercises)) {
+            if (i + curr_idx >= arrlen(current_routine->exercises)) {
                 break;
             }
-            mvwprintw(win, i + 4, 3, "%s: %d x %d", ex.title, ex.reps, ex.sets);
+
+            CurrentExercise ex = current_routine->exercises[i + curr_idx];
+            mvwprintw(win, i + 4, 3, "%s: %d x %d", ex.title, ex.sets, ex.reps);
         }
 
-        if (arrlen(current_routine.exercises) > 5) {
-            if (curr_idx > 0 && curr_idx + 5 < arrlen(current_routine.exercises)) {
-                mvwprintw(win, 13, 2, "[p]revious | [n]ext");
+        if (arrlen(current_routine->exercises) > 10) {
+            if (curr_idx > 0 && curr_idx + 10 < arrlen(current_routine->exercises)) {
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
             } else if (curr_idx > 0) {
-                mvwprintw(win, 13, 2, "[p]revious");
-            } else if (curr_idx + 5 < arrlen(current_routine.exercises)) {
-                mvwprintw(win, 13, 2, "[n]ext");
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+            } else if (curr_idx + 5 < arrlen(current_routine->exercises)) {
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
             }
         }
-        mvwprintw(win, 17, 2, "[esc] back | [enter] start");
-        mvwprintw(win, 18, 2, "[d]elete");
+
+        mvwprintw(win, WIN_HEIGHT - 5, 2, "[d]elete");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] start");
 
         wrefresh(win);
 
@@ -141,20 +157,20 @@ enum state show_workout_menu(AppState* app_state) {
                 next_state = STATE_MENU_MAIN;
                 break;
             case 10:  // enter
-                // next_state = STATE_RUN;
+                next_state = STATE_ACTIVE;
                 break;
             case 'd':
-                routine_arr_remove(&app_state->routines, &current_routine);
+                routine_arr_remove(&app_state->routines, current_routine->routine_id);
                 next_state = STATE_MENU_MAIN;
                 break;
             case 'p':
                 if (curr_idx != 0) {
-                    curr_idx -= 5;
+                    curr_idx -= 10;
                 }
                 break;
             case 'n':
-                if (curr_idx + 5 < arrlen(app_state->routines)) {
-                    curr_idx += 5;
+                if (curr_idx + 5 < arrlen(current_routine->exercises)) {
+                    curr_idx += 10;
                 }
                 break;
             default:

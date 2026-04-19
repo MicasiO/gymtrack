@@ -36,6 +36,12 @@ void add_field_form(Form* form, const char* title, enum field_type type, int cap
 
 void show_form(Form* form) {
     int fields_len = arrlen(form->fields);
+
+    if (fields_len == 0) {
+        form->raw_form = NULL;
+        return;
+    }
+
     FIELD** raw_fields = calloc(fields_len + 1, sizeof(FIELD*));
     pos_form_cursor(form->raw_form);
 
@@ -166,8 +172,9 @@ char* get_field_value(Field* field) {
         return NULL;
 
     char* raw_buf = field_buffer(field->raw_field, 0);
-    if (!raw_buf)
+    if (!raw_buf) {
         return NULL;
+    }
 
     char* clean_str = strdup(raw_buf);
 
@@ -181,10 +188,18 @@ char* get_field_value(Field* field) {
 }
 
 void delete_form(Form* form) {
-    unpost_form(form->raw_form);
-    free_form(form->raw_form);
+    if (form->raw_form != NULL) {
+        unpost_form(form->raw_form);
+
+        FIELD** fields_arr = form_fields(form->raw_form);
+        free_form(form->raw_form);
+        free(fields_arr);
+    }
+
     for (int i = 0; i < arrlen(form->fields); i++) {
         delwin(form->fields[i].win);
         free_field(form->fields[i].raw_field);
     }
+
+    arrfree(form->fields);
 }

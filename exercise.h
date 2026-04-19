@@ -7,4 +7,13 @@ typedef struct Exercise {
     int sets;
 } Exercise;
 
+typedef struct CurrentExercise {
+    char* title;
+    int reps;
+    int sets;
+    bool done;
+} CurrentExercise;
+
+void init_current_exercises(CurrentExercise* current, Exercise* exercises);
+
 #endif

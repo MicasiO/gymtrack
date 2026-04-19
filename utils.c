@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdarg.h>
@@ -7,6 +8,29 @@
 #include "json.h"
 #include "routine.h"
 #include "stb_ds.h"
+
+const int logo_height = 8;
+const char* logo[] = {"                       _                  _     ",
+                      "                      | |                | |    ",
+                      "  __ _ _   _ _ __ ___ | |_ _ __ __ _  ___| | __ ",
+                      " / _` | | | | '_ ` _ \\| __| '__/ _` |/ __| |/ / ",
+                      "| (_| | |_| | | | | | | |_| | | (_| | (__|   <  ",
+                      " \\__, |\\__, |_| |_| |_|\\__|_|  \\__,_|\\___|_|\\_\\ ",
+                      "  __/ | __/ |                                   ",
+                      " |___/ |___/                                    "};
+
+void init_app_state(AppState* app_state) {
+    app_state->routines = NULL;
+    app_state->history = NULL;
+    app_state->current = NULL;
+    app_state->draft.exercises = NULL;
+}
+
+void draw_logo(WINDOW* win, int start_y, int start_x) {
+    for (int i = 0; i < logo_height; i++) {
+        mvwprintw(win, start_y + i, start_x, "%s", logo[i]);
+    }
+}
 
 void die(const char* s) {
     endwin();
@@ -25,7 +49,7 @@ int is_str_empty(char* str) {
     return 1;
 }
 
-void serialize(Routine* routines) {
+void serialize_routines(Routine* routines) {
     FILE* file = fopen("workouts.json", "w");
     if (!file) {
         die("file");
@@ -68,8 +92,8 @@ void serialize(Routine* routines) {
 }
 
 // stores workout.json into routines struct array
-void deserialize(Routine** routines) {
-    FILE* file = fopen("workouts.json", "r");
+void deserialize_routines(Routine** routines) {
+    FILE* file = fopen("workouts.json", "ab+");
     if (file == NULL) {
         die("data file");
     }
@@ -86,6 +110,7 @@ void deserialize(Routine** routines) {
     fclose(file);
 
     if (len == 0) {
+        free(buffer);
         *routines = NULL;
         return;
     }
@@ -132,6 +157,136 @@ void deserialize(Routine** routines) {
                         } else if (strcmp(prop->name->string, "reps") == 0) {
                             ex.reps = atoi(json_value_as_number(prop->value)->number);
                         }
+                        prop = prop->next;
+                    }
+
+                    arrput(r.exercises, ex);
+                    ex_el = ex_el->next;
+                }
+            }
+
+            prop = prop->next;
+        }
+
+        arrput(*routines, r);
+    }
+
+    free(root);
+    free(buffer);
+}
+
+void serialize_history(CurrentRoutine* routines) {
+    FILE* file = fopen("history.json", "w");
+    if (!file) {
+        die("file");
+    }
+
+    int count = arrlen(routines);
+
+    fprintf(file, "[\n");
+    for (int i = 0; i < count; i++) {
+        fprintf(file, "    {\n");
+
+        fprintf(file, "        \"id\": %lld,\n", routines[i].routine_id);
+        fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
+        fprintf(file, "        \"last_done\": %ld,\n", routines[i].date);
+        fprintf(file, "        \"exercises\": [\n");
+        int ex_count = arrlen(routines[i].exercises);
+        for (int j = 0; j < ex_count; j++) {
+            fprintf(file, "            {\n");
+            CurrentExercise ex = routines[i].exercises[j];
+            fprintf(file, "               \"title\": \"%s\",\n", ex.title);
+            fprintf(file, "               \"sets\": %d,\n", ex.sets);
+            fprintf(file, "               \"reps\": %d\n", ex.reps);
+            fprintf(file, "               \"done\": %d\n", ex.done);
+            if (j == ex_count - 1) {
+                fprintf(file, "            }\n");
+            } else {
+                fprintf(file, "            },\n");
+            }
+        }
+        fprintf(file, "        ]\n");
+
+        if (i == count - 1) {
+            fprintf(file, "    }\n");
+        } else {
+            fprintf(file, "    },\n");
+        }
+    }
+
+    fprintf(file, "]\n");
+    fclose(file);
+}
+
+// stores history.json into routines struct array
+void deserialize_history(CurrentRoutine** routines) {
+    FILE* file = fopen("history.json", "ab+");
+    if (file == NULL) {
+        die("data file");
+    }
+
+    fseek(file, 0, SEEK_END);
+    long len = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char* buffer = malloc(len + 1);
+    if (!buffer) {
+        die("malloc");
+    }
+    fread(buffer, 1, len, file);
+    buffer[len] = '\0';
+    fclose(file);
+
+    if (len == 0) {
+        free(buffer);
+        *routines = NULL;
+        return;
+    }
+
+    struct json_value_s* root = json_parse(buffer, len);
+    if (!root) {
+        die("invalid JSON");
+    }
+
+    struct json_array_s* routines_arr = (struct json_array_s*)json_value_as_array(root);
+    if (!routines_arr) {
+        die("empty workout");
+    }
+    struct json_array_element_s* routine_el = routines_arr->start;
+
+    for (; routine_el != NULL; routine_el = routine_el->next) {
+        struct json_object_s* routine_obj = json_value_as_object(routine_el->value);
+
+        CurrentRoutine r;
+        r.exercises = NULL;
+
+        struct json_object_element_s* prop = routine_obj->start;
+        while (prop) {
+            if (strcmp(prop->name->string, "title") == 0) {
+                r.title = strdup(json_value_as_string(prop->value)->string);
+            } else if (strcmp(prop->name->string, "routine_id") == 0) {
+                r.routine_id = atoll(json_value_as_number(prop->value)->number);
+            } else if (strcmp(prop->name->string, "last_done") == 0) {
+                r.date = (time_t)atoll(json_value_as_number(prop->value)->number);
+            } else if (strcmp(prop->name->string, "exercises") == 0) {
+                struct json_array_s* ex_arr = json_value_as_array(prop->value);
+                struct json_array_element_s* ex_el = ex_arr->start;
+
+                while (ex_el) {
+                    struct json_object_s* ex_obj = json_value_as_object(ex_el->value);
+                    CurrentExercise ex;
+
+                    struct json_object_element_s* prop = ex_obj->start;
+                    while (prop) {
+                        if (strcmp(prop->name->string, "title") == 0) {
+                            ex.title = strdup(json_value_as_string(prop->value)->string);
+                        } else if (strcmp(prop->name->string, "sets") == 0) {
+                            ex.sets = atoi(json_value_as_number(prop->value)->number);
+                        } else if (strcmp(prop->name->string, "reps") == 0) {
+                            ex.reps = atoi(json_value_as_number(prop->value)->number);
+                        } else if (strcmp(prop->name->string, "done") == 0) {
+                            ex.done = atoi(json_value_as_number(prop->value)->number);
+                        }
+
                         prop = prop->next;
                     }
 
