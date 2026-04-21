@@ -13,7 +13,7 @@ enum state show_create_title(AppState* app_state) {
     }
     app_state->draft.title = NULL;
     app_state->draft.exercises = NULL;
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -58,7 +58,7 @@ enum state show_create_title(AppState* app_state) {
 }
 
 enum state show_create_workout(AppState* app_state) {
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -103,7 +103,7 @@ enum state show_create_workout(AppState* app_state) {
 }
 
 enum state show_create_continue(AppState* app_state) {
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {

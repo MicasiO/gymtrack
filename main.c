@@ -54,7 +54,7 @@ int main() {
         wrefresh(header_win);
 
         touchwin(body_win);
-        wclear(body_win);
+        werase(body_win);
         wrefresh(body_win);
         switch (state) {
             case STATE_MENU_MAIN:
@@ -76,18 +76,18 @@ int main() {
                 state = show_active(&app_state);
                 break;
             case STATE_ACTIVE_CONTINUE:  // exercise finished, enter sets and reps
+            case STATE_ACTIVE_DONE:      // entered sets and reps, continue session
                 state = show_finish_exercise(&app_state);
+                break;
+            case STATE_ACTIVE_FINISHED:  // session finished, save routine to history
+                state = show_finish_routine(&app_state);
                 break;
             default:
                 break;
         }
     }
 
-    free(app_state.draft.title);
-    free_current_routine(app_state.current);
-    free_history(app_state.history);
-    free_routines(app_state.routines);
-
+    free_app_state(&app_state);
     delwin(header_win);
     delwin(body_win);
     endwin();

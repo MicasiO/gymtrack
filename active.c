@@ -7,7 +7,7 @@
 #include "utils.h"
 
 enum state show_active(AppState* app_state) {
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -16,6 +16,8 @@ enum state show_active(AppState* app_state) {
 
     curs_set(0);
     keypad(win, true);
+
+    wtimeout(win, 100);  // prevent input blocking for timer
 
     CurrentRoutine* previous = get_last_routine(app_state->history, app_state->current->routine_id);
     CurrentExercise* prev_exercises = NULL;
@@ -26,57 +28,60 @@ enum state show_active(AppState* app_state) {
     CurrentExercise* exercises = app_state->current->exercises;
     char* title = app_state->current->title;
 
-    int curr_idx = 0;
+    int curr_idx = app_state->current->index;
 
     enum state next_state = -1;
     while (next_state == -1) {
-        wclear(win);
+        werase(win);
         box(win, 0, 0);
+
+        double total_seconds = get_stopwatch(app_state->stopwatch);
+        int hours = (int)total_seconds / 3600;
+        int minutes = ((int)total_seconds % 3600) / 60;
+        int seconds = (int)total_seconds % 60;
+
+        mvwprintw(win, 3, 2, "%02d:%02d:%02d", hours, minutes, seconds);
+
         mvwprintw(win, 2, 2, "%s", title);
 
-        wattron(win, A_REVERSE);
-        mvwprintw(win, 5, 2, "%s%s", exercises[curr_idx].done ? "✔ " : "",
-                  exercises[curr_idx].title);
-        wattroff(win, A_REVERSE);
-        wprintw(win, " %d x %d", exercises[curr_idx].sets, exercises[curr_idx].reps);
+        int center_y = 8;
 
-        if (arrlen(exercises) > 1) {
-            if (curr_idx > 0 && curr_idx < arrlen(exercises) - 1) {
-                wattron(win, A_DIM);
-                mvwprintw(win, 4, 2, "%s%s", exercises[curr_idx - 1].done ? "✔ " : "",
-                          exercises[curr_idx - 1].title);
-                wattroff(win, A_DIM);
+        for (int i = -4; i <= 4; i++) {
+            int draw_idx = curr_idx + i;
 
-                wattron(win, A_DIM);
-                mvwprintw(win, 6, 2, "%s%s", exercises[curr_idx + 1].done ? "✔ " : "",
-                          exercises[curr_idx + 1].title);
-                wattroff(win, A_DIM);
+            if (draw_idx >= 0 && draw_idx < arrlen(exercises)) {
+                int draw_y = center_y + i;
 
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
-            } else if (curr_idx > 0) {
-                wattron(win, A_DIM);
-                mvwprintw(win, 4, 2, "%s%s", exercises[curr_idx - 1].done ? "✔ " : "",
-                          exercises[curr_idx - 1].title);
+                if (i == 0) {
+                    wattron(win, A_REVERSE);
+                    mvwprintw(win, draw_y, 2, "%s%s", exercises[draw_idx].done ? "✔ " : "",
+                              exercises[draw_idx].title);
+                    wattroff(win, A_REVERSE);
 
-                wattroff(win, A_DIM);
-
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
-            } else if (curr_idx < arrlen(exercises) - 1) {
-                wattron(win, A_DIM);
-                mvwprintw(win, 6, 2, "%s%s", exercises[curr_idx + 1].done ? "✔ " : "",
-                          exercises[curr_idx + 1].title);
-
-                wattroff(win, A_DIM);
-
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+                    wprintw(win, " %d x %d", exercises[draw_idx].sets, exercises[draw_idx].reps);
+                } else {
+                    wattron(win, A_DIM);
+                    mvwprintw(win, draw_y, 2, "%s%s", exercises[draw_idx].done ? "✔ " : "",
+                              exercises[draw_idx].title);
+                    wattroff(win, A_DIM);
+                }
             }
         }
 
+        if (curr_idx > 0 && curr_idx < arrlen(exercises) - 1) {
+            mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
+        } else if (curr_idx > 0) {
+            mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+        } else if (curr_idx < arrlen(exercises) - 1) {
+            mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+        }
+
         if (previous != NULL) {
-            mvwprintw(win, WIN_HEIGHT - 5, 2, "Last time: %d x %d", prev_exercises[curr_idx].sets,
+            mvwprintw(win, WIN_HEIGHT - 7, 2, "Last time: %d x %d", prev_exercises[curr_idx].sets,
                       prev_exercises[curr_idx].reps);
         }
 
+        mvwprintw(win, WIN_HEIGHT - 5, 2, "[f] finish session");
         mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] finished exercise");
 
         wrefresh(win);
@@ -84,13 +89,13 @@ enum state show_active(AppState* app_state) {
         int ch = wgetch(win);
         switch (ch) {
             case ERR:
-                die("char input");
-                break;
+                continue;
             case 10:  // enter
                 app_state->current->index = curr_idx;
                 next_state = STATE_ACTIVE_CONTINUE;
                 break;
             case 27:  // esc
+                stop_stopwatch(app_state->stopwatch);
                 next_state = STATE_MENU_MAIN;
                 break;
             case 'p':
@@ -103,18 +108,22 @@ enum state show_active(AppState* app_state) {
                     curr_idx++;
                 }
                 break;
+            case 'f':
+                stop_stopwatch(app_state->stopwatch);
+                next_state = STATE_ACTIVE_FINISHED;
+                break;
             default:
                 break;
         }
     }
-
+    wtimeout(win, -1);
     delwin(win);
     return next_state;
 }
 
 // shown when exercise is finished to enter reps and sets
 enum state show_finish_exercise(AppState* app_state) {
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -148,9 +157,15 @@ enum state show_finish_exercise(AppState* app_state) {
     handle_input_form(&form, &next_state, STATE_ACTIVE, STATE_ACTIVE_DONE);
 
     if (next_state == STATE_ACTIVE_DONE) {
-        app_state->current->exercises[idx].sets = atoi(get_field_value(&form.fields[0]));
-        app_state->current->exercises[idx].reps = atoi(get_field_value(&form.fields[1]));
+        char* sets_str = get_field_value(&form.fields[0]);
+        char* reps_str = get_field_value(&form.fields[1]);
+
+        app_state->current->exercises[idx].sets = atoi(sets_str);
+        app_state->current->exercises[idx].reps = atoi(reps_str);
         app_state->current->exercises[idx].done = true;
+
+        free(sets_str);
+        free(reps_str);
 
         next_state = STATE_ACTIVE;
     }
@@ -161,5 +176,80 @@ enum state show_finish_exercise(AppState* app_state) {
 
     wrefresh(app_state->body_win);
 
+    return next_state;
+}
+
+enum state show_finish_routine(AppState* app_state) {
+    werase(app_state->body_win);
+
+    WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
+    if (win == NULL) {
+        die("window");
+    }
+
+    curs_set(0);
+    keypad(win, true);
+
+    CurrentRoutine* current_routine = app_state->current;
+
+    int curr_idx = 0;
+    enum state next_state = -1;
+
+    while (next_state == -1) {
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 2, 2, "%s:", current_routine->title);
+
+        for (int i = 0; i < 10; i++) {
+            if (i + curr_idx >= arrlen(current_routine->exercises)) {
+                break;
+            }
+
+            CurrentExercise ex = current_routine->exercises[i + curr_idx];
+            mvwprintw(win, i + 4, 3, "%s%s: %d x %d", ex.done ? "✔ " : "", ex.title, ex.sets,
+                      ex.reps);
+        }
+
+        if (arrlen(current_routine->exercises) > 10) {
+            if (curr_idx > 0 && curr_idx + 10 < arrlen(current_routine->exercises)) {
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
+            } else if (curr_idx > 0) {
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+            } else if (curr_idx + 5 < arrlen(current_routine->exercises)) {
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+            }
+        }
+
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+
+        wrefresh(win);
+
+        int ch = wgetch(win);
+        switch (ch) {
+            case ERR:
+                die("char input");
+                break;
+            case 27:  // esc
+                next_state = STATE_ACTIVE;
+                break;
+            case 10:  // enter
+                next_state = STATE_MENU_MAIN;
+                break;
+            case 'p':
+                if (curr_idx != 0) {
+                    curr_idx -= 10;
+                }
+                break;
+            case 'n':
+                if (curr_idx + 10 < arrlen(current_routine->exercises)) {
+                    curr_idx += 10;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    delwin(win);
     return next_state;
 }

@@ -25,9 +25,10 @@ void routine_arr_add(Routine** routines_ptr, Routine* routine);
 void routine_arr_remove(Routine** routines_ptr, long long id);
 void exercise_arr_add(Exercise** exercises, Form form);
 int generate_routine_id(Routine* routines);
-CurrentRoutine* get_last_routine(CurrentRoutine* history, long long id);
 
+CurrentRoutine* get_last_routine(CurrentRoutine* history, long long id);
 CurrentRoutine* init_current_routine(Routine* routine);
+void curr_routine_arr_add(CurrentRoutine** routines_ptr, CurrentRoutine* routine);
 
 void free_draft_routine(Routine* draft);
 void free_current_routine(CurrentRoutine* current);

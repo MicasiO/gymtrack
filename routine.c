@@ -176,3 +176,10 @@ void free_history(CurrentRoutine* history) {
 
     arrfree(history);
 }
+
+void curr_routine_arr_add(CurrentRoutine** routines_ptr, CurrentRoutine* routine) {
+    CurrentRoutine* routines = *routines_ptr;
+    arrput(routines, *routine);
+    *routines_ptr = routines;
+    serialize_history(routines);
+}

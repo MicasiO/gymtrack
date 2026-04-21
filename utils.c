@@ -1,9 +1,11 @@
 #include "utils.h"
+#include <bits/time.h>
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "exercise.h"
 #include "json.h"
 #include "routine.h"
@@ -320,4 +322,39 @@ void print_log(const char* s, ...) {
     fclose(file);
 
     va_end(args);
+}
+
+void start_stopwatch(Stopwatch* sw) {
+    sw->is_running = true;
+    clock_gettime(CLOCK_MONOTONIC, &sw->start_time);
+}
+
+void stop_stopwatch(Stopwatch* sw) {
+    if (sw->is_running) {
+        clock_gettime(CLOCK_MONOTONIC, &sw->stop_time);
+        sw->is_running = false;
+    }
+}
+
+double get_stopwatch(Stopwatch* sw) {
+    struct timespec current_time;
+
+    if (sw->is_running) {
+        clock_gettime(CLOCK_MONOTONIC, &current_time);
+    } else {
+        current_time = sw->stop_time;
+    }
+
+    double start_sec = sw->start_time.tv_sec + (sw->start_time.tv_nsec / 1e9);
+    double current_sec = current_time.tv_sec + (current_time.tv_nsec / 1e9);
+
+    return current_sec - start_sec;
+}
+
+void free_app_state(AppState* app_state) {
+    free(app_state->stopwatch);
+    free(app_state->draft.title);
+    free_current_routine(app_state->current);
+    free_history(app_state->history);
+    free_routines(app_state->routines);
 }
