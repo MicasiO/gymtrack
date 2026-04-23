@@ -11,6 +11,7 @@ enum state show_create_title(AppState* app_state) {
     if (app_state->draft.title != NULL) {
         free(app_state->draft.title);
     }
+
     app_state->draft.title = NULL;
     app_state->draft.exercises = NULL;
     werase(app_state->body_win);
@@ -130,7 +131,7 @@ enum state show_create_continue(AppState* app_state) {
             break;
         }
         Exercise ex = app_state->draft.exercises[arrlen(app_state->draft.exercises) - i - 1];
-        mvwprintw(win, 4 + i, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps);
+        mvwprintw(win, 4 + i, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps[0]);
     }
     mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] finish | [enter] add exercise");
     wrefresh(win);

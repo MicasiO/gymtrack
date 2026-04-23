@@ -19,7 +19,7 @@ void select_workout(AppState* app_state, enum state* next_state, const char ch, 
 enum state show_main_menu(AppState* app_state) {
     free_current_routine(app_state->current);
     app_state->current = NULL;
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -33,7 +33,7 @@ enum state show_main_menu(AppState* app_state) {
 
     enum state next_state = -1;
     while (next_state == -1) {
-        wclear(win);
+        werase(win);
         box(win, 0, 0);
         mvwprintw(win, 2, 2, "Workouts:");
 
@@ -104,7 +104,7 @@ enum state show_main_menu(AppState* app_state) {
 }
 
 enum state show_workout_menu(AppState* app_state) {
-    wclear(app_state->body_win);
+    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -120,7 +120,7 @@ enum state show_workout_menu(AppState* app_state) {
     enum state next_state = -1;
 
     while (next_state == -1) {
-        wclear(win);
+        werase(win);
         box(win, 0, 0);
         mvwprintw(win, 2, 2, "%s:", current_routine->title);
 
@@ -130,7 +130,7 @@ enum state show_workout_menu(AppState* app_state) {
             }
 
             CurrentExercise ex = current_routine->exercises[i + curr_idx];
-            mvwprintw(win, i + 4, 3, "%s: %d x %d", ex.title, ex.sets, ex.reps);
+            mvwprintw(win, i + 4, 3, "%s: %d x %d", ex.title, ex.sets, ex.reps[0]);
         }
 
         if (arrlen(current_routine->exercises) > 10) {
@@ -157,6 +157,8 @@ enum state show_workout_menu(AppState* app_state) {
                 next_state = STATE_MENU_MAIN;
                 break;
             case 10:  // enter
+                app_state->stopwatch = malloc(sizeof(Stopwatch));
+                start_stopwatch(app_state->stopwatch);
                 next_state = STATE_ACTIVE;
                 break;
             case 'd':
@@ -169,7 +171,7 @@ enum state show_workout_menu(AppState* app_state) {
                 }
                 break;
             case 'n':
-                if (curr_idx + 5 < arrlen(current_routine->exercises)) {
+                if (curr_idx + 10 < arrlen(current_routine->exercises)) {
                     curr_idx += 10;
                 }
                 break;

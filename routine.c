@@ -22,6 +22,7 @@ void routine_arr_remove(Routine** routines_ptr, long long id) {
             if (routines[i].exercises != NULL) {
                 for (int j = 0; j < arrlen(routines[i].exercises); j++) {
                     free(routines[i].exercises[j].title);
+                    arrfree(routines[i].exercises[j].reps);
                 }
                 arrfree(routines[i].exercises);
             }
@@ -42,7 +43,10 @@ void exercise_arr_add(Exercise** exercises, Form form) {
     char* reps_str = get_field_value(&form.fields[2]);
 
     ex.sets = atoi(sets_str);
-    ex.reps = atoi(reps_str);
+    ex.reps = NULL;
+    for (int i = 0; i < ex.sets; i++) {
+        arrput(ex.reps, atoi(reps_str));
+    }
 
     free(sets_str);
     free(reps_str);
@@ -75,6 +79,7 @@ CurrentRoutine* init_current_routine(Routine* routine) {
     if (routine == NULL) {
         return NULL;
     }
+
     CurrentRoutine* current = (CurrentRoutine*)malloc(sizeof(CurrentRoutine));
     current->title = strdup(routine->title);
     current->routine_id = routine->id;
@@ -88,7 +93,10 @@ CurrentRoutine* init_current_routine(Routine* routine) {
 
         current_ex.title = strdup(ex.title);
         current_ex.sets = ex.sets;
-        current_ex.reps = ex.reps;
+        current_ex.reps = NULL;
+        for (int j = 0; j < ex.sets; j++) {
+            arrput(current_ex.reps, ex.reps[j]);
+        }
         current_ex.done = false;
 
         arrput(current->exercises, current_ex);
@@ -123,6 +131,7 @@ void free_current_routine(CurrentRoutine* current) {
     if (current->exercises != NULL) {
         for (int i = 0; i < arrlen(current->exercises); i++) {
             free(current->exercises[i].title);
+            arrfree(current->exercises[i].reps);
         }
 
         arrfree(current->exercises);
@@ -146,6 +155,7 @@ void free_routines(Routine* routines) {
                 if (routines[i].exercises[j].title != NULL) {
                     free(routines[i].exercises[j].title);
                 }
+                arrfree(routines[i].exercises[j].reps);
             }
             arrfree(routines[i].exercises);
         }
@@ -169,6 +179,7 @@ void free_history(CurrentRoutine* history) {
                 if (history[i].exercises[j].title != NULL) {
                     free(history[i].exercises[j].title);
                 }
+                arrfree(history[i].exercises[j].reps);
             }
             arrfree(history[i].exercises);
         }

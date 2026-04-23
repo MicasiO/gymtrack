@@ -1,6 +1,5 @@
 #include <locale.h>
 #include "active.h"
-#include "routine.h"
 #define STB_DS_IMPLEMENTATION
 #include <assert.h>
 #include <ncurses.h>
@@ -75,9 +74,11 @@ int main() {
             case STATE_ACTIVE:  // active workout, show all exercises
                 state = show_active(&app_state);
                 break;
-            case STATE_ACTIVE_CONTINUE:  // exercise finished, enter sets and reps
-            case STATE_ACTIVE_DONE:      // entered sets and reps, continue session
-                state = show_finish_exercise(&app_state);
+            case STATE_ACTIVE_SETS:  // exercise finished, enter sets
+                state = show_active_sets(&app_state);
+                break;
+            case STATE_ACTIVE_REPS:  // exercise finished, enter reps for each set
+                state = show_active_reps(&app_state);
                 break;
             case STATE_ACTIVE_FINISHED:  // session finished, save routine to history
                 state = show_finish_routine(&app_state);

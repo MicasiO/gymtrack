@@ -1,5 +1,6 @@
 #include "active.h"
 #include <ncurses.h>
+#include <stdlib.h>
 #include "exercise.h"
 #include "form.h"
 #include "routine.h"
@@ -58,7 +59,9 @@ enum state show_active(AppState* app_state) {
                               exercises[draw_idx].title);
                     wattroff(win, A_REVERSE);
 
-                    wprintw(win, " %d x %d", exercises[draw_idx].sets, exercises[draw_idx].reps);
+                    wprintw(win, " %d x ", exercises[draw_idx].sets);
+                    draw_formatted_reps(win, exercises[draw_idx].sets, exercises[draw_idx].reps);
+
                 } else {
                     wattron(win, A_DIM);
                     mvwprintw(win, draw_y, 2, "%s%s", exercises[draw_idx].done ? "✔ " : "",
@@ -77,8 +80,8 @@ enum state show_active(AppState* app_state) {
         }
 
         if (previous != NULL) {
-            mvwprintw(win, WIN_HEIGHT - 7, 2, "Last time: %d x %d", prev_exercises[curr_idx].sets,
-                      prev_exercises[curr_idx].reps);
+            mvwprintw(win, WIN_HEIGHT - 7, 2, "Last time: %d x ", prev_exercises[curr_idx].sets);
+            draw_formatted_reps(win, prev_exercises[curr_idx].sets, prev_exercises[curr_idx].reps);
         }
 
         mvwprintw(win, WIN_HEIGHT - 5, 2, "[f] finish session");
@@ -92,7 +95,7 @@ enum state show_active(AppState* app_state) {
                 continue;
             case 10:  // enter
                 app_state->current->index = curr_idx;
-                next_state = STATE_ACTIVE_CONTINUE;
+                next_state = STATE_ACTIVE_SETS;
                 break;
             case 27:  // esc
                 stop_stopwatch(app_state->stopwatch);
@@ -121,6 +124,120 @@ enum state show_active(AppState* app_state) {
     return next_state;
 }
 
+enum state show_active_sets(AppState* app_state) {
+    werase(app_state->body_win);
+
+    WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
+    if (win == NULL) {
+        die("window");
+    }
+
+    box(win, 0, 0);
+    curs_set(1);
+
+    WINDOW* form_win = derwin(win, 9, 42, 1, 1);
+    if (form_win == NULL) {
+        die("window");
+    }
+
+    keypad(form_win, TRUE);
+
+    Form form;
+    init_form(win, form_win, &form, 4, 1);
+    add_field_form(&form, "Sets:", FIELD_NUMBER, 3);
+    show_form(&form);
+
+    int idx = app_state->current->index;
+
+    mvwprintw(win, 2, 2, "%s", app_state->current->exercises[idx].title);
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+    wrefresh(win);
+    wrefresh(form_win);
+
+    enum state next_state;
+    handle_input_form(&form, &next_state, STATE_ACTIVE, STATE_ACTIVE_REPS);
+
+    if (next_state == STATE_ACTIVE_REPS) {
+        CurrentExercise* curr_ex = &app_state->current->exercises[idx];
+        app_state->reps_idx = 0;
+        char* sets_str = get_field_value(&form.fields[0]);
+        curr_ex->sets = atoi(sets_str);
+        if (curr_ex->reps != NULL) {
+            arrfree(curr_ex->reps);
+            curr_ex->reps = NULL;
+        }
+        app_state->current->exercises[idx].done = true;
+
+        free(sets_str);
+    }
+
+    delete_form(&form);
+    delwin(form_win);
+    delwin(win);
+
+    wrefresh(app_state->body_win);
+
+    return next_state;
+}
+
+enum state show_active_reps(AppState* app_state) {
+    werase(app_state->body_win);
+
+    WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
+    if (win == NULL) {
+        die("window");
+    }
+
+    box(win, 0, 0);
+    curs_set(1);
+
+    WINDOW* form_win = derwin(win, 9, 42, 1, 1);
+    if (form_win == NULL) {
+        die("window");
+    }
+
+    keypad(form_win, TRUE);
+
+    Form form;
+    init_form(win, form_win, &form, 4, 1);
+    add_field_form(&form, "Reps:", FIELD_NUMBER, 3);
+    show_form(&form);
+
+    int idx = app_state->current->index;
+
+    mvwprintw(win, 2, 2, "Set %d", app_state->reps_idx + 1);
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+    wrefresh(win);
+    wrefresh(form_win);
+
+    enum state next_state;
+    handle_input_form(&form, &next_state, STATE_ACTIVE_SETS, STATE_ACTIVE_REPS);
+
+    if (next_state == STATE_ACTIVE_REPS) {
+        CurrentExercise* curr_ex = &app_state->current->exercises[idx];
+
+        char* reps_str = get_field_value(&form.fields[0]);
+        arrput(curr_ex->reps, atoi(reps_str));
+        // curr_ex.reps[app_state->reps_idx] = atoi(reps_str);
+        free(reps_str);
+
+        if (app_state->reps_idx + 1 == curr_ex->sets) {
+            next_state = STATE_ACTIVE;
+        } else {
+            next_state = STATE_ACTIVE_REPS;
+            app_state->reps_idx++;
+        }
+    }
+
+    delete_form(&form);
+    delwin(form_win);
+    delwin(win);
+
+    wrefresh(app_state->body_win);
+
+    return next_state;
+}
+
 // shown when exercise is finished to enter reps and sets
 enum state show_finish_exercise(AppState* app_state) {
     werase(app_state->body_win);
@@ -143,8 +260,12 @@ enum state show_finish_exercise(AppState* app_state) {
     Form form;
     init_form(win, form_win, &form, 4, 1);
     add_field_form(&form, "Sets:", FIELD_NUMBER, 3);
-    add_field_form(&form, "Reps:", FIELD_NUMBER, 3);
     show_form(&form);
+    char* sets_str = get_field_value(&form.fields[0]);
+
+    // add_field_form(&form, "Reps:", FIELD_NUMBER, 3);
+    free(sets_str);
+    delete_form(&form);
 
     int idx = app_state->current->index;
 
@@ -158,14 +279,11 @@ enum state show_finish_exercise(AppState* app_state) {
 
     if (next_state == STATE_ACTIVE_DONE) {
         char* sets_str = get_field_value(&form.fields[0]);
-        char* reps_str = get_field_value(&form.fields[1]);
 
         app_state->current->exercises[idx].sets = atoi(sets_str);
-        app_state->current->exercises[idx].reps = atoi(reps_str);
         app_state->current->exercises[idx].done = true;
 
         free(sets_str);
-        free(reps_str);
 
         next_state = STATE_ACTIVE;
     }
@@ -206,8 +324,8 @@ enum state show_finish_routine(AppState* app_state) {
             }
 
             CurrentExercise ex = current_routine->exercises[i + curr_idx];
-            mvwprintw(win, i + 4, 3, "%s%s: %d x %d", ex.done ? "✔ " : "", ex.title, ex.sets,
-                      ex.reps);
+            mvwprintw(win, i + 4, 3, "%s%s: %d x ", ex.done ? "✔ " : "", ex.title, ex.sets);
+            draw_formatted_reps(win, ex.sets, ex.reps);
         }
 
         if (arrlen(current_routine->exercises) > 10) {
@@ -252,4 +370,18 @@ enum state show_finish_routine(AppState* app_state) {
 
     delwin(win);
     return next_state;
+}
+
+void draw_formatted_reps(WINDOW* win, int sets, int* reps) {
+    if (sets < 4) {
+        for (int r = 0; r < sets; r++) {
+            if (r < sets - 1) {
+                wprintw(win, "%d, ", reps[r]);
+            } else {
+                wprintw(win, "%d", reps[r]);
+            }
+        }
+    } else {
+        wprintw(win, "%d,...,%d ", reps[0], reps[sets - 1]);
+    }
 }

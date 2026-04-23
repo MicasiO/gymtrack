@@ -12,12 +12,14 @@ enum state {
     STATE_CREATE_CONTINUE,
     STATE_ACTIVE,
     STATE_ACTIVE_CONTINUE,
+    STATE_ACTIVE_SETS,
+    STATE_ACTIVE_REPS,
     STATE_ACTIVE_DONE,
     STATE_ACTIVE_FINISHED,
     STATE_QUIT
 };
 
-#define WIN_WIDTH 48
+#define WIN_WIDTH 55
 #define WIN_HEIGHT 21
 
 typedef struct {
@@ -33,6 +35,7 @@ typedef struct AppState {
     CurrentRoutine* history;  // previously done rouines;
     WINDOW* body_win;
     Stopwatch* stopwatch;
+    int reps_idx;
 } AppState;
 
 void init_app_state(AppState* app_state);

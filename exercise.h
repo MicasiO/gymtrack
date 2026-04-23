@@ -3,13 +3,13 @@
 
 typedef struct Exercise {
     char* title;
-    int reps;
+    int* reps;
     int sets;
 } Exercise;
 
 typedef struct CurrentExercise {
     char* title;
-    int reps;
+    int* reps;
     int sets;
     bool done;
 } CurrentExercise;

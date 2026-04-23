@@ -73,7 +73,14 @@ void serialize_routines(Routine* routines) {
             Exercise ex = routines[i].exercises[j];
             fprintf(file, "               \"title\": \"%s\",\n", ex.title);
             fprintf(file, "               \"sets\": %d,\n", ex.sets);
-            fprintf(file, "               \"reps\": %d\n", ex.reps);
+            fprintf(file, "               \"reps\": [");
+            for (int r = 0; r < ex.sets; r++) {
+                if (r == ex.sets - 1) {
+                    fprintf(file, "%d]\n", ex.reps[r]);
+                } else {
+                    fprintf(file, "%d, ", ex.reps[r]);
+                }
+            }
             if (j == ex_count - 1) {
                 fprintf(file, "            }\n");
             } else {
@@ -157,7 +164,13 @@ void deserialize_routines(Routine** routines) {
                         } else if (strcmp(prop->name->string, "sets") == 0) {
                             ex.sets = atoi(json_value_as_number(prop->value)->number);
                         } else if (strcmp(prop->name->string, "reps") == 0) {
-                            ex.reps = atoi(json_value_as_number(prop->value)->number);
+                            struct json_array_s* reps_arr = json_value_as_array(prop->value);
+                            struct json_array_element_s* reps_el = reps_arr->start;
+                            ex.reps = NULL;
+                            while (reps_el) {
+                                arrput(ex.reps, atoi(json_value_as_number(reps_el->value)->number));
+                                reps_el = reps_el->next;
+                            }
                         }
                         prop = prop->next;
                     }
@@ -199,7 +212,14 @@ void serialize_history(CurrentRoutine* routines) {
             CurrentExercise ex = routines[i].exercises[j];
             fprintf(file, "               \"title\": \"%s\",\n", ex.title);
             fprintf(file, "               \"sets\": %d,\n", ex.sets);
-            fprintf(file, "               \"reps\": %d\n", ex.reps);
+            fprintf(file, "               \"reps\": [");
+            for (int r = 0; r < ex.sets; r++) {
+                if (r == ex.sets - 1) {
+                    fprintf(file, "%d]\n", ex.reps[r]);
+                } else {
+                    fprintf(file, "%d, ", ex.reps[r]);
+                }
+            }
             fprintf(file, "               \"done\": %d\n", ex.done);
             if (j == ex_count - 1) {
                 fprintf(file, "            }\n");
@@ -284,7 +304,13 @@ void deserialize_history(CurrentRoutine** routines) {
                         } else if (strcmp(prop->name->string, "sets") == 0) {
                             ex.sets = atoi(json_value_as_number(prop->value)->number);
                         } else if (strcmp(prop->name->string, "reps") == 0) {
-                            ex.reps = atoi(json_value_as_number(prop->value)->number);
+                            struct json_array_s* reps_arr = json_value_as_array(prop->value);
+                            struct json_array_element_s* reps_el = reps_arr->start;
+                            ex.reps = NULL;
+                            while (reps_el) {
+                                arrput(ex.reps, atoi(json_value_as_number(reps_el->value)->number));
+                                reps_el = reps_el->next;
+                            }
                         } else if (strcmp(prop->name->string, "done") == 0) {
                             ex.done = atoi(json_value_as_number(prop->value)->number);
                         }
@@ -355,6 +381,6 @@ void free_app_state(AppState* app_state) {
     free(app_state->stopwatch);
     free(app_state->draft.title);
     free_current_routine(app_state->current);
-    free_history(app_state->history);
     free_routines(app_state->routines);
+    free_history(app_state->history);
 }
