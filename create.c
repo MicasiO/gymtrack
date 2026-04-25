@@ -14,7 +14,6 @@ enum state show_create_title(AppState* app_state) {
 
     app_state->draft.title = NULL;
     app_state->draft.exercises = NULL;
-    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -53,14 +52,10 @@ enum state show_create_title(AppState* app_state) {
     delwin(form_win);
     delwin(win);
 
-    wrefresh(app_state->body_win);
-
     return next_state;
 }
 
 enum state show_create_workout(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -88,7 +83,7 @@ enum state show_create_workout(AppState* app_state) {
     wrefresh(form_win);
 
     enum state next_state;
-    handle_input_form(&form, &next_state, STATE_CREATE_TITLE, STATE_CREATE_CONTINUE);
+    handle_input_form(&form, &next_state, STATE_CREATE_CANCEL_EX, STATE_CREATE_CONTINUE);
 
     if (next_state == STATE_CREATE_CONTINUE) {
         exercise_arr_add(&app_state->draft.exercises, form);
@@ -98,14 +93,10 @@ enum state show_create_workout(AppState* app_state) {
     delwin(form_win);
     delwin(win);
 
-    wrefresh(app_state->body_win);
-
     return next_state;
 }
 
 enum state show_create_continue(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -133,6 +124,7 @@ enum state show_create_continue(AppState* app_state) {
         Exercise ex = app_state->draft.exercises[arrlen(app_state->draft.exercises) - i - 1];
         mvwprintw(win, 4 + i, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps[0]);
     }
+
     mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] finish | [enter] add exercise");
     wrefresh(win);
     wrefresh(form_win);
@@ -141,7 +133,11 @@ enum state show_create_continue(AppState* app_state) {
     handle_input_form(&form, &next_state, STATE_MENU_MAIN, STATE_CREATE_WORKOUT);
 
     if (next_state == STATE_MENU_MAIN) {
-        routine_arr_add(&app_state->routines, &app_state->draft);
+        if (arrlen(app_state->draft.exercises) != 0) {
+            routine_arr_add(&app_state->routines, &app_state->draft);
+        } else {
+            free(app_state->draft.title);
+        }
 
         app_state->draft.title = NULL;
         app_state->draft.exercises = NULL;
@@ -150,8 +146,6 @@ enum state show_create_continue(AppState* app_state) {
     delete_form(&form);
     delwin(form_win);
     delwin(win);
-
-    wrefresh(app_state->body_win);
 
     return next_state;
 }

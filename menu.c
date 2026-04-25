@@ -19,7 +19,6 @@ void select_workout(AppState* app_state, enum state* next_state, const char ch, 
 enum state show_main_menu(AppState* app_state) {
     free_current_routine(app_state->current);
     app_state->current = NULL;
-    werase(app_state->body_win);
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -104,7 +103,10 @@ enum state show_main_menu(AppState* app_state) {
 }
 
 enum state show_workout_menu(AppState* app_state) {
-    werase(app_state->body_win);
+    if (app_state->stopwatch != NULL) {
+        free(app_state->stopwatch);
+        app_state->stopwatch = NULL;
+    }
 
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
@@ -162,7 +164,7 @@ enum state show_workout_menu(AppState* app_state) {
                 next_state = STATE_ACTIVE;
                 break;
             case 'd':
-                routine_arr_remove(&app_state->routines, current_routine->routine_id);
+                routine_arr_remove(&app_state->routines, current_routine->id);
                 next_state = STATE_MENU_MAIN;
                 break;
             case 'p':

@@ -1,6 +1,7 @@
 #ifndef ROUTINE_H
 #define ROUTINE_H
 
+#include <stdbool.h>
 #include "exercise.h"
 #include "stdlib.h"
 
@@ -10,25 +11,26 @@ typedef struct Routine {
     char* title;
     Exercise* exercises;
     time_t last_done;
-    long long id;
+    char* id;
 } Routine;
 
 typedef struct CurrentRoutine {
     char* title;
-    long long routine_id;
+    char* id;
     CurrentExercise* exercises;
     time_t date;
     long long index;
 } CurrentRoutine;
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine);
-void routine_arr_remove(Routine** routines_ptr, long long id);
+void routine_arr_remove(Routine** routines_ptr, char* id);
 void exercise_arr_add(Exercise** exercises, Form form);
-int generate_routine_id(Routine* routines);
+void generate_routine_id(Routine* routines, Routine* routine);
 
-CurrentRoutine* get_last_routine(CurrentRoutine* history, long long id);
+CurrentRoutine* get_last_routine(CurrentRoutine* history, char* id);
 CurrentRoutine* init_current_routine(Routine* routine);
-void curr_routine_arr_add(CurrentRoutine** routines_ptr, CurrentRoutine* routine);
+
+bool is_routine_done(CurrentRoutine* routine);
 
 void free_draft_routine(Routine* draft);
 void free_current_routine(CurrentRoutine* current);

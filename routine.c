@@ -8,17 +8,18 @@
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine) {
     Routine* routines = *routines_ptr;
-    routine->id = generate_routine_id(routines);
+    generate_routine_id(routines, routine);
     arrput(routines, *routine);
     *routines_ptr = routines;
     serialize_routines(routines);
 }
 
-void routine_arr_remove(Routine** routines_ptr, long long id) {
+void routine_arr_remove(Routine** routines_ptr, char* id) {
     Routine* routines = *routines_ptr;
     for (int i = 0; i < arrlen(routines); i++) {
-        if (routines[i].id == id) {
+        if (strcmp(routines[i].id, id) == 0) {
             free(routines[i].title);
+            free(routines[i].id);
             if (routines[i].exercises != NULL) {
                 for (int j = 0; j < arrlen(routines[i].exercises); j++) {
                     free(routines[i].exercises[j].title);
@@ -54,21 +55,15 @@ void exercise_arr_add(Exercise** exercises, Form form) {
     arrput(*exercises, ex);
 }
 
-int generate_routine_id(Routine* routines) {
-    int highest_id = 0;
-
-    for (int i = 0; i < arrlen(routines); i++) {
-        if (routines[i].id > highest_id) {
-            highest_id = routines[i].id;
-        }
-    }
-
-    return highest_id + 1;
+void generate_routine_id(Routine* routines, Routine* routine) {
+    char uuid[37];
+    generate_uuid(uuid);
+    routine->id = strdup(uuid);
 }
 
-CurrentRoutine* get_last_routine(CurrentRoutine* routines_hist, long long id) {
+CurrentRoutine* get_last_routine(CurrentRoutine* routines_hist, char* id) {
     for (int i = arrlen(routines_hist) - 1; i >= 0; i--) {
-        if (routines_hist[i].routine_id == id) {
+        if (strcmp(routines_hist[i].id, id) == 0) {
             return &routines_hist[i];
         }
     }
@@ -82,7 +77,7 @@ CurrentRoutine* init_current_routine(Routine* routine) {
 
     CurrentRoutine* current = (CurrentRoutine*)malloc(sizeof(CurrentRoutine));
     current->title = strdup(routine->title);
-    current->routine_id = routine->id;
+    current->id = strdup(routine->id);
     current->date = time(NULL);
     current->exercises = NULL;
     current->index = 0;
@@ -109,7 +104,10 @@ void free_draft_routine(Routine* draft) {
     if (draft == NULL) {
         return;
     }
+
     free(draft->title);
+    free(draft->id);
+
     if (draft->exercises != NULL) {
         for (int i = 0; i < arrlen(draft->exercises); i++) {
             free(draft->exercises[i].title);
@@ -127,6 +125,7 @@ void free_current_routine(CurrentRoutine* current) {
     }
 
     free(current->title);
+    free(current->id);
 
     if (current->exercises != NULL) {
         for (int i = 0; i < arrlen(current->exercises); i++) {
@@ -148,6 +147,10 @@ void free_routines(Routine* routines) {
     for (int i = 0; i < arrlen(routines); i++) {
         if (routines[i].title != NULL) {
             free(routines[i].title);
+        }
+
+        if (routines[i].id != NULL) {
+            free(routines[i].id);
         }
 
         if (routines[i].exercises != NULL) {
@@ -174,6 +177,10 @@ void free_history(CurrentRoutine* history) {
             free(history[i].title);
         }
 
+        if (history[i].id != NULL) {
+            free(history[i].id);
+        }
+
         if (history[i].exercises != NULL) {
             for (int j = 0; j < arrlen(history[i].exercises); j++) {
                 if (history[i].exercises[j].title != NULL) {
@@ -188,9 +195,12 @@ void free_history(CurrentRoutine* history) {
     arrfree(history);
 }
 
-void curr_routine_arr_add(CurrentRoutine** routines_ptr, CurrentRoutine* routine) {
-    CurrentRoutine* routines = *routines_ptr;
-    arrput(routines, *routine);
-    *routines_ptr = routines;
-    serialize_history(routines);
+bool is_routine_done(CurrentRoutine* routine) {
+    for (int i = 0; i < arrlen(routine->exercises); i++) {
+        if (routine->exercises[i].done == true) {
+            return true;
+        }
+    }
+
+    return false;
 }

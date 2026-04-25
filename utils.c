@@ -63,7 +63,7 @@ void serialize_routines(Routine* routines) {
     for (int i = 0; i < count; i++) {
         fprintf(file, "    {\n");
 
-        fprintf(file, "        \"id\": %lld,\n", routines[i].id);
+        fprintf(file, "        \"id\": \"%s\",\n", routines[i].id);
         fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
         fprintf(file, "        \"last_done\": 0,\n");
         fprintf(file, "        \"exercises\": [\n");
@@ -146,7 +146,7 @@ void deserialize_routines(Routine** routines) {
             if (strcmp(prop->name->string, "title") == 0) {
                 r.title = strdup(json_value_as_string(prop->value)->string);
             } else if (strcmp(prop->name->string, "id") == 0) {
-                r.id = atoll(json_value_as_number(prop->value)->number);
+                r.id = strdup(json_value_as_string(prop->value)->string);
             } else if (strcmp(prop->name->string, "last_done") == 0) {
                 r.last_done = (time_t)atoll(json_value_as_number(prop->value)->number);
             } else if (strcmp(prop->name->string, "exercises") == 0) {
@@ -202,7 +202,7 @@ void serialize_history(CurrentRoutine* routines) {
     for (int i = 0; i < count; i++) {
         fprintf(file, "    {\n");
 
-        fprintf(file, "        \"id\": %lld,\n", routines[i].routine_id);
+        fprintf(file, "        \"id\": \"%s\",\n", routines[i].id);
         fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
         fprintf(file, "        \"last_done\": %ld,\n", routines[i].date);
         fprintf(file, "        \"exercises\": [\n");
@@ -215,7 +215,7 @@ void serialize_history(CurrentRoutine* routines) {
             fprintf(file, "               \"reps\": [");
             for (int r = 0; r < ex.sets; r++) {
                 if (r == ex.sets - 1) {
-                    fprintf(file, "%d]\n", ex.reps[r]);
+                    fprintf(file, "%d],\n", ex.reps[r]);
                 } else {
                     fprintf(file, "%d, ", ex.reps[r]);
                 }
@@ -285,8 +285,8 @@ void deserialize_history(CurrentRoutine** routines) {
         while (prop) {
             if (strcmp(prop->name->string, "title") == 0) {
                 r.title = strdup(json_value_as_string(prop->value)->string);
-            } else if (strcmp(prop->name->string, "routine_id") == 0) {
-                r.routine_id = atoll(json_value_as_number(prop->value)->number);
+            } else if (strcmp(prop->name->string, "id") == 0) {
+                r.id = strdup(json_value_as_string(prop->value)->string);
             } else if (strcmp(prop->name->string, "last_done") == 0) {
                 r.date = (time_t)atoll(json_value_as_number(prop->value)->number);
             } else if (strcmp(prop->name->string, "exercises") == 0) {
@@ -383,4 +383,22 @@ void free_app_state(AppState* app_state) {
     free_current_routine(app_state->current);
     free_routines(app_state->routines);
     free_history(app_state->history);
+}
+
+void generate_uuid(char* buf) {
+    srand(time(NULL));
+    const char* hex_chars = "0123456789abcdef";
+
+    for (int i = 0; i < 36; i++) {
+        if (i == 8 || i == 13 || i == 18 || i == 23) {
+            buf[i] = '-';
+        } else if (i == 14) {
+            buf[i] = '4';
+        } else if (i == 19) {
+            buf[i] = hex_chars[(rand() % 4) + 8];
+        } else {
+            buf[i] = hex_chars[rand() % 16];
+        }
+    }
+    buf[36] = '\0';
 }

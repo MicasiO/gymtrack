@@ -8,8 +8,6 @@
 #include "utils.h"
 
 enum state show_active(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -20,7 +18,7 @@ enum state show_active(AppState* app_state) {
 
     wtimeout(win, 100);  // prevent input blocking for timer
 
-    CurrentRoutine* previous = get_last_routine(app_state->history, app_state->current->routine_id);
+    CurrentRoutine* previous = get_last_routine(app_state->history, app_state->current->id);
     CurrentExercise* prev_exercises = NULL;
     if (previous != NULL) {
         prev_exercises = previous->exercises;
@@ -29,19 +27,14 @@ enum state show_active(AppState* app_state) {
     CurrentExercise* exercises = app_state->current->exercises;
     char* title = app_state->current->title;
 
-    int curr_idx = app_state->current->index;
+    long long curr_idx = app_state->current->index;
 
     enum state next_state = -1;
     while (next_state == -1) {
         werase(win);
         box(win, 0, 0);
 
-        double total_seconds = get_stopwatch(app_state->stopwatch);
-        int hours = (int)total_seconds / 3600;
-        int minutes = ((int)total_seconds % 3600) / 60;
-        int seconds = (int)total_seconds % 60;
-
-        mvwprintw(win, 3, 2, "%02d:%02d:%02d", hours, minutes, seconds);
+        display_stopwatch(win, app_state->stopwatch, 3, 2);
 
         mvwprintw(win, 2, 2, "%s", title);
 
@@ -79,7 +72,7 @@ enum state show_active(AppState* app_state) {
             mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
         }
 
-        if (previous != NULL) {
+        if (previous != NULL && prev_exercises[curr_idx].done != false) {
             mvwprintw(win, WIN_HEIGHT - 7, 2, "Last time: %d x ", prev_exercises[curr_idx].sets);
             draw_formatted_reps(win, prev_exercises[curr_idx].sets, prev_exercises[curr_idx].reps);
         }
@@ -89,12 +82,24 @@ enum state show_active(AppState* app_state) {
 
         wrefresh(win);
 
+        CurrentExercise* curr_ex = NULL;
+
         int ch = wgetch(win);
         switch (ch) {
             case ERR:
                 continue;
             case 10:  // enter
                 app_state->current->index = curr_idx;
+
+                curr_ex = &exercises[curr_idx];
+                app_state->ex_backup.sets = curr_ex->sets;
+                app_state->ex_backup.done = curr_ex->done;
+                app_state->ex_backup.reps = NULL;
+
+                for (int i = 0; i < arrlen(curr_ex->reps); i++) {
+                    arrput(app_state->ex_backup.reps, curr_ex->reps[i]);
+                }
+
                 next_state = STATE_ACTIVE_SETS;
                 break;
             case 27:  // esc
@@ -125,8 +130,6 @@ enum state show_active(AppState* app_state) {
 }
 
 enum state show_active_sets(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -147,9 +150,9 @@ enum state show_active_sets(AppState* app_state) {
     add_field_form(&form, "Sets:", FIELD_NUMBER, 3);
     show_form(&form);
 
-    int idx = app_state->current->index;
-
-    mvwprintw(win, 2, 2, "%s", app_state->current->exercises[idx].title);
+    long long idx = app_state->current->index;
+    CurrentExercise* curr_ex = &app_state->current->exercises[idx];
+    mvwprintw(win, 2, 2, "%s", curr_ex->title);
     mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
     wrefresh(win);
     wrefresh(form_win);
@@ -158,31 +161,39 @@ enum state show_active_sets(AppState* app_state) {
     handle_input_form(&form, &next_state, STATE_ACTIVE, STATE_ACTIVE_REPS);
 
     if (next_state == STATE_ACTIVE_REPS) {
-        CurrentExercise* curr_ex = &app_state->current->exercises[idx];
         app_state->reps_idx = 0;
         char* sets_str = get_field_value(&form.fields[0]);
-        curr_ex->sets = atoi(sets_str);
+        curr_ex->sets = atoi(sets_str) <= 0 ? 1 : atoi(sets_str);
+
         if (curr_ex->reps != NULL) {
             arrfree(curr_ex->reps);
             curr_ex->reps = NULL;
         }
+
         app_state->current->exercises[idx].done = true;
 
         free(sets_str);
+
+    } else if (next_state == STATE_ACTIVE) {
+        if (curr_ex->reps != NULL) {
+            arrfree(curr_ex->reps);
+        }
+
+        curr_ex->sets = app_state->ex_backup.sets;
+        curr_ex->done = app_state->ex_backup.done;
+        curr_ex->reps = app_state->ex_backup.reps;
+
+        app_state->ex_backup.reps = NULL;
     }
 
     delete_form(&form);
     delwin(form_win);
     delwin(win);
 
-    wrefresh(app_state->body_win);
-
     return next_state;
 }
 
 enum state show_active_reps(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -218,10 +229,14 @@ enum state show_active_reps(AppState* app_state) {
 
         char* reps_str = get_field_value(&form.fields[0]);
         arrput(curr_ex->reps, atoi(reps_str));
-        // curr_ex.reps[app_state->reps_idx] = atoi(reps_str);
         free(reps_str);
 
         if (app_state->reps_idx + 1 == curr_ex->sets) {
+            if (app_state->ex_backup.reps != NULL) {
+                arrfree(app_state->ex_backup.reps);
+                app_state->ex_backup.reps = NULL;
+            }
+
             next_state = STATE_ACTIVE;
         } else {
             next_state = STATE_ACTIVE_REPS;
@@ -233,15 +248,11 @@ enum state show_active_reps(AppState* app_state) {
     delwin(form_win);
     delwin(win);
 
-    wrefresh(app_state->body_win);
-
     return next_state;
 }
 
 // shown when exercise is finished to enter reps and sets
 enum state show_finish_exercise(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -263,7 +274,6 @@ enum state show_finish_exercise(AppState* app_state) {
     show_form(&form);
     char* sets_str = get_field_value(&form.fields[0]);
 
-    // add_field_form(&form, "Reps:", FIELD_NUMBER, 3);
     free(sets_str);
     delete_form(&form);
 
@@ -292,14 +302,10 @@ enum state show_finish_exercise(AppState* app_state) {
     delwin(form_win);
     delwin(win);
 
-    wrefresh(app_state->body_win);
-
     return next_state;
 }
 
 enum state show_finish_routine(AppState* app_state) {
-    werase(app_state->body_win);
-
     WINDOW* win = derwin(app_state->body_win, WIN_HEIGHT, WIN_WIDTH, 0, 0);
     if (win == NULL) {
         die("window");
@@ -310,13 +316,15 @@ enum state show_finish_routine(AppState* app_state) {
 
     CurrentRoutine* current_routine = app_state->current;
 
-    int curr_idx = 0;
-    enum state next_state = -1;
+    long long curr_idx = 0;
 
+    enum state next_state = -1;
     while (next_state == -1) {
         werase(win);
         box(win, 0, 0);
-        mvwprintw(win, 2, 2, "%s:", current_routine->title);
+        mvwprintw(win, 2, 2, "%s", current_routine->title);
+
+        display_stopwatch(win, app_state->stopwatch, 3, 2);
 
         for (int i = 0; i < 10; i++) {
             if (i + curr_idx >= arrlen(current_routine->exercises)) {
@@ -324,7 +332,7 @@ enum state show_finish_routine(AppState* app_state) {
             }
 
             CurrentExercise ex = current_routine->exercises[i + curr_idx];
-            mvwprintw(win, i + 4, 3, "%s%s: %d x ", ex.done ? "✔ " : "", ex.title, ex.sets);
+            mvwprintw(win, i + 5, 3, "%s%s: %d x ", ex.done ? "✔ " : "", ex.title, ex.sets);
             draw_formatted_reps(win, ex.sets, ex.reps);
         }
 
@@ -338,7 +346,7 @@ enum state show_finish_routine(AppState* app_state) {
             }
         }
 
-        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[enter] continue");
 
         wrefresh(win);
 
@@ -347,10 +355,18 @@ enum state show_finish_routine(AppState* app_state) {
             case ERR:
                 die("char input");
                 break;
-            case 27:  // esc
-                next_state = STATE_ACTIVE;
-                break;
             case 10:  // enter
+                if (is_routine_done(app_state->current)) {
+                    arrput(app_state->history, *app_state->current);
+                    serialize_history(app_state->history);
+
+                    free(app_state->current);
+                } else {
+                    free_current_routine(app_state->current);
+                }
+
+                app_state->current = NULL;
+
                 next_state = STATE_MENU_MAIN;
                 break;
             case 'p':
@@ -384,4 +400,13 @@ void draw_formatted_reps(WINDOW* win, int sets, int* reps) {
     } else {
         wprintw(win, "%d,...,%d ", reps[0], reps[sets - 1]);
     }
+}
+
+void display_stopwatch(WINDOW* win, Stopwatch* sw, int y, int x) {
+    double total_seconds = get_stopwatch(sw);
+    int hours = (int)total_seconds / 3600;
+    int minutes = ((int)total_seconds % 3600) / 60;
+    int seconds = (int)total_seconds % 60;
+
+    mvwprintw(win, y, x, "%02d:%02d:%02d", hours, minutes, seconds);
 }

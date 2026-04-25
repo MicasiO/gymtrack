@@ -68,6 +68,7 @@ int main() {
             case STATE_CREATE_WORKOUT:
                 state = show_create_workout(&app_state);
                 break;
+            case STATE_CREATE_CANCEL_EX:  // cancel exercise creation
             case STATE_CREATE_CONTINUE:
                 state = show_create_continue(&app_state);
                 break;
