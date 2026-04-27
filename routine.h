@@ -24,7 +24,7 @@ typedef struct CurrentRoutine {
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine);
 void routine_arr_remove(Routine** routines_ptr, char* id);
-void generate_routine_id(Routine* routines, Routine* routine);
+void generate_routine_id(Routine* routine);
 
 void update_routine_last_done(Routine** routines_ptr, char* id);
 time_t get_routine_last_done(Routine** routines_ptr, char* id);
@@ -36,7 +36,7 @@ bool is_routine_done(CurrentRoutine* routine);
 
 void free_draft_routine(Routine* draft);
 void free_current_routine(CurrentRoutine* current);
-void free_routines(Routine* routines);
-void free_history(CurrentRoutine* history);
+void free_routines(Routine** routines_ptr);
+void free_history(CurrentRoutine** history_ptr);
 
 #endif

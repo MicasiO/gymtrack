@@ -34,8 +34,9 @@ int main() {
 
     WINDOW* header_win = newwin(9, sx, 0, 0);
     WINDOW* body_win = newwin(sy, sx, 9, 0);
+
     if (header_win == NULL || body_win == NULL) {
-        die("window");
+        die("window error: perhaps the window is too small for gymtrack");
     }
 
     app_state.body_win = body_win;

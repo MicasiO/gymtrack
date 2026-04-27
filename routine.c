@@ -7,7 +7,7 @@
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine) {
     Routine* routines = *routines_ptr;
-    generate_routine_id(routines, routine);
+    generate_routine_id(routine);
     arrput(routines, *routine);
     *routines_ptr = routines;
     serialize_routines(routines);
@@ -22,6 +22,7 @@ void routine_arr_remove(Routine** routines_ptr, char* id) {
             if (routines[i].exercises != NULL) {
                 for (int j = 0; j < arrlen(routines[i].exercises); j++) {
                     free(routines[i].exercises[j].title);
+                    free(routines[i].exercises[j].id);
                 }
                 arrfree(routines[i].exercises);
             }
@@ -35,7 +36,7 @@ void routine_arr_remove(Routine** routines_ptr, char* id) {
     serialize_routines(*routines_ptr);
 }
 
-void generate_routine_id(Routine* routines, Routine* routine) {
+void generate_routine_id(Routine* routine) {
     char uuid[37];
     generate_uuid(uuid);
     routine->id = strdup(uuid);
@@ -99,6 +100,8 @@ CurrentRoutine* init_current_routine(Routine* routine) {
         CurrentExercise current_ex;
 
         current_ex.title = strdup(ex.title);
+        current_ex.id = strdup(ex.id);
+
         current_ex.sets = ex.sets;
         current_ex.reps = NULL;
         for (int j = 0; j < ex.sets; j++) {
@@ -120,13 +123,14 @@ void free_draft_routine(Routine* draft) {
     free(draft->title);
     free(draft->id);
 
-    if (draft->exercises != NULL) {
-        for (int i = 0; i < arrlen(draft->exercises); i++) {
-            free(draft->exercises[i].title);
-        }
-
-        arrfree(draft->exercises);
-    }
+    free_exercises(&draft->exercises);
+    // if (draft->exercises != NULL) {
+    //     for (int i = 0; i < arrlen(draft->exercises); i++) {
+    //         free(draft->exercises[i].title);
+    //     }
+    //
+    //     arrfree(draft->exercises);
+    // }
 
     free(draft);
 }
@@ -136,22 +140,29 @@ void free_current_routine(CurrentRoutine* current) {
         return;
     }
 
-    free(current->title);
-    free(current->id);
-
-    if (current->exercises != NULL) {
-        for (int i = 0; i < arrlen(current->exercises); i++) {
-            free(current->exercises[i].title);
-            arrfree(current->exercises[i].reps);
-        }
-
-        arrfree(current->exercises);
+    if (current->title != NULL) {
+        free(current->title);
     }
+
+    if (current->id != NULL) {
+        free(current->id);
+    }
+
+    free_history_exercises(&current->exercises);
+    // if (current->exercises != NULL) {
+    //     for (int i = 0; i < arrlen(current->exercises); i++) {
+    //         free(current->exercises[i].title);
+    //         arrfree(current->exercises[i].reps);
+    //     }
+    //
+    //     arrfree(current->exercises);
+    // }
 
     free(current);
 }
 
-void free_routines(Routine* routines) {
+void free_routines(Routine** routines_ptr) {
+    Routine* routines = *routines_ptr;
     if (routines == NULL) {
         return;
     }
@@ -165,21 +176,15 @@ void free_routines(Routine* routines) {
             free(routines[i].id);
         }
 
-        if (routines[i].exercises != NULL) {
-            for (int j = 0; j < arrlen(routines[i].exercises); j++) {
-                if (routines[i].exercises[j].title != NULL) {
-                    free(routines[i].exercises[j].title);
-                }
-                // arrfree(routines[i].exercises[j].reps);
-            }
-            arrfree(routines[i].exercises);
-        }
+        free_exercises(&routines[i].exercises);
     }
 
     arrfree(routines);
 }
 
-void free_history(CurrentRoutine* history) {
+void free_history(CurrentRoutine** history_ptr) {
+    CurrentRoutine* history = *history_ptr;
+
     if (history == NULL) {
         return;
     }
@@ -193,15 +198,7 @@ void free_history(CurrentRoutine* history) {
             free(history[i].id);
         }
 
-        if (history[i].exercises != NULL) {
-            for (int j = 0; j < arrlen(history[i].exercises); j++) {
-                if (history[i].exercises[j].title != NULL) {
-                    free(history[i].exercises[j].title);
-                }
-                arrfree(history[i].exercises[j].reps);
-            }
-            arrfree(history[i].exercises);
-        }
+        free_history_exercises(&history[i].exercises);
     }
 
     arrfree(history);

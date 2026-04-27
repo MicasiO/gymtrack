@@ -71,6 +71,7 @@ void serialize_routines(Routine* routines) {
         for (int j = 0; j < ex_count; j++) {
             fprintf(file, "            {\n");
             Exercise ex = routines[i].exercises[j];
+            fprintf(file, "               \"id\": \"%s\",\n", ex.id);
             fprintf(file, "               \"title\": \"%s\",\n", ex.title);
             fprintf(file, "               \"sets\": %d,\n", ex.sets);
             fprintf(file, "               \"reps\": %d\n", ex.reps);
@@ -155,6 +156,8 @@ void deserialize_routines(Routine** routines) {
                     while (prop) {
                         if (strcmp(prop->name->string, "title") == 0) {
                             ex.title = strdup(json_value_as_string(prop->value)->string);
+                        } else if (strcmp(prop->name->string, "id") == 0) {
+                            ex.id = strdup(json_value_as_string(prop->value)->string);
                         } else if (strcmp(prop->name->string, "sets") == 0) {
                             ex.sets = atoi(json_value_as_number(prop->value)->number);
                         } else if (strcmp(prop->name->string, "reps") == 0) {
@@ -198,6 +201,7 @@ void serialize_history(CurrentRoutine* routines) {
         for (int j = 0; j < ex_count; j++) {
             fprintf(file, "            {\n");
             CurrentExercise ex = routines[i].exercises[j];
+            fprintf(file, "               \"id\": \"%s\",\n", ex.id);
             fprintf(file, "               \"title\": \"%s\",\n", ex.title);
             fprintf(file, "               \"sets\": %d,\n", ex.sets);
             fprintf(file, "               \"reps\": [");
@@ -289,6 +293,8 @@ void deserialize_history(CurrentRoutine** routines) {
                     while (prop) {
                         if (strcmp(prop->name->string, "title") == 0) {
                             ex.title = strdup(json_value_as_string(prop->value)->string);
+                        } else if (strcmp(prop->name->string, "id") == 0) {
+                            ex.id = strdup(json_value_as_string(prop->value)->string);
                         } else if (strcmp(prop->name->string, "sets") == 0) {
                             ex.sets = atoi(json_value_as_number(prop->value)->number);
                         } else if (strcmp(prop->name->string, "reps") == 0) {
@@ -369,8 +375,8 @@ void free_app_state(AppState* app_state) {
     free(app_state->stopwatch);
     free(app_state->draft.title);
     free_current_routine(app_state->current);
-    free_routines(app_state->routines);
-    free_history(app_state->history);
+    free_routines(&app_state->routines);
+    free_history(&app_state->history);
 }
 
 void generate_uuid(char* buf) {
