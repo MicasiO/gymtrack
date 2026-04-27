@@ -2,7 +2,6 @@
 #include <string.h>
 #include <time.h>
 #include "exercise.h"
-#include "form.h"
 #include "stb_ds.h"
 #include "utils.h"
 
@@ -34,21 +33,6 @@ void routine_arr_remove(Routine** routines_ptr, char* id) {
         }
     }
     serialize_routines(*routines_ptr);
-}
-
-void exercise_arr_add(Exercise** exercises, Form form) {
-    Exercise ex;
-    ex.title = get_field_value(&form.fields[0]);
-    char* sets_str = get_field_value(&form.fields[1]);
-    char* reps_str = get_field_value(&form.fields[2]);
-
-    ex.sets = atoi(sets_str);
-    ex.reps = atoi(reps_str);
-
-    free(sets_str);
-    free(reps_str);
-
-    arrput(*exercises, ex);
 }
 
 void generate_routine_id(Routine* routines, Routine* routine) {

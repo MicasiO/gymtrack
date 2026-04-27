@@ -24,7 +24,6 @@ typedef struct CurrentRoutine {
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine);
 void routine_arr_remove(Routine** routines_ptr, char* id);
-void exercise_arr_add(Exercise** exercises, Form form);
 void generate_routine_id(Routine* routines, Routine* routine);
 
 void update_routine_last_done(Routine** routines_ptr, char* id);

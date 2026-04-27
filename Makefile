@@ -1,5 +1,5 @@
 FLAGS = -g -fsanitize=address -lncursesw -lform
-FILES = main.c create.c utils.c form.c menu.c routine.c active.c
+FILES = main.c create.c utils.c form.c menu.c routine.c active.c exercise.c
 
 gdb: compile
 	gdb ./gymtrack
