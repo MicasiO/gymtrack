@@ -10,6 +10,8 @@ enum state show_active_reps(AppState* app_state);
 enum state show_finish_exercise(AppState* app_state);
 enum state show_finish_routine(AppState* app_state);
 
+void finish_routine(AppState* app_state);
+
 void draw_formatted_reps(WINDOW* win, int sets, int* reps);
 void display_stopwatch(WINDOW* win, Stopwatch* sw, int y, int x);
 

@@ -24,6 +24,7 @@ enum state {
 
 #define WIN_WIDTH 55
 #define WIN_HEIGHT 21
+#define MAX_ROUTINE_HIST_COUNT 50
 
 typedef struct {
     struct timespec start_time;

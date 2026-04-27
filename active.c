@@ -356,15 +356,7 @@ enum state show_finish_routine(AppState* app_state) {
                 die("char input");
                 break;
             case 10:  // enter
-                if (is_routine_done(app_state->current)) {
-                    update_routine_last_done(&app_state->routines, app_state->current->id);
-                    arrput(app_state->history, *app_state->current);
-                    serialize_history(app_state->history);
-
-                    free(app_state->current);
-                } else {
-                    free_current_routine(app_state->current);
-                }
+                finish_routine(app_state);
 
                 app_state->current = NULL;
 
@@ -387,6 +379,27 @@ enum state show_finish_routine(AppState* app_state) {
 
     delwin(win);
     return next_state;
+}
+
+void finish_routine(AppState* app_state) {
+    if (is_routine_done(app_state->current)) {
+        update_routine_last_done(&app_state->routines, app_state->current->id);
+        arrput(app_state->history, *app_state->current);
+
+        CurrentRoutine** routine_hist =
+            get_routine_history(&app_state->history, app_state->current->id);
+
+        if (arrlen(routine_hist) > MAX_ROUTINE_HIST_COUNT) {
+            history_remove_oldest(&app_state->history, app_state->current->id);
+        }
+
+        serialize_history(app_state->history);
+
+        arrfree(routine_hist);
+        free(app_state->current);
+    } else {
+        free_current_routine(app_state->current);
+    }
 }
 
 void draw_formatted_reps(WINDOW* win, int sets, int* reps) {

@@ -26,10 +26,13 @@ void routine_arr_add(Routine** routines_ptr, Routine* routine);
 void routine_arr_remove(Routine** routines_ptr, char* id);
 void generate_routine_id(Routine* routine);
 
+void history_remove_oldest(CurrentRoutine** routines_ptr, char* id);
+
 void update_routine_last_done(Routine** routines_ptr, char* id);
 time_t get_routine_last_done(Routine** routines_ptr, char* id);
 
 CurrentRoutine* get_last_routine(CurrentRoutine* history, char* id);
+CurrentRoutine** get_routine_history(CurrentRoutine** history_ptr, char* id);
 CurrentRoutine* init_current_routine(Routine* routine);
 
 bool is_routine_done(CurrentRoutine* routine);

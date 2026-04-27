@@ -42,10 +42,10 @@ void generate_routine_id(Routine* routine) {
     routine->id = strdup(uuid);
 }
 
-CurrentRoutine* get_last_routine(CurrentRoutine* routines_hist, char* id) {
-    for (int i = arrlen(routines_hist) - 1; i >= 0; i--) {
-        if (strcmp(routines_hist[i].id, id) == 0) {
-            return &routines_hist[i];
+CurrentRoutine* get_last_routine(CurrentRoutine* history, char* id) {
+    for (int i = arrlen(history) - 1; i >= 0; i--) {
+        if (strcmp(history[i].id, id) == 0) {
+            return &history[i];
         }
     }
     return NULL;
@@ -115,6 +115,52 @@ CurrentRoutine* init_current_routine(Routine* routine) {
     return current;
 }
 
+CurrentRoutine** get_routine_history(CurrentRoutine** history_ptr, char* id) {
+    CurrentRoutine* history = *history_ptr;
+    if (history == NULL) {
+        return NULL;
+    }
+
+    CurrentRoutine** routine_hist = NULL;
+
+    for (int i = arrlen(history) - 1; i >= 0; i--) {
+        if (strcmp(history[i].id, id) == 0) {
+            arrput(routine_hist, &history[i]);
+        }
+    }
+
+    return routine_hist;
+}
+
+void history_remove_oldest(CurrentRoutine** history_ptr, char* id) {
+    CurrentRoutine* history = *history_ptr;
+
+    if (history == NULL || id == NULL) {
+        return;
+    }
+
+    time_t oldest_time = 0;
+    int oldest_idx = -1;
+
+    for (int i = 0; i < arrlen(history); i++) {
+        if (strcmp(history[i].id, id) == 0) {
+            if (oldest_idx == -1 || history[i].last_done < oldest_time) {
+                oldest_idx = i;
+                oldest_time = history[i].last_done;
+            }
+        }
+    }
+
+    if (oldest_idx != -1) {
+        free(history[oldest_idx].title);
+        free(history[oldest_idx].id);
+        free_history_exercises(&history[oldest_idx].exercises);
+
+        arrdel(history, oldest_idx);
+        *history_ptr = history;
+    }
+}
+
 void free_draft_routine(Routine* draft) {
     if (draft == NULL) {
         return;
@@ -124,13 +170,6 @@ void free_draft_routine(Routine* draft) {
     free(draft->id);
 
     free_exercises(&draft->exercises);
-    // if (draft->exercises != NULL) {
-    //     for (int i = 0; i < arrlen(draft->exercises); i++) {
-    //         free(draft->exercises[i].title);
-    //     }
-    //
-    //     arrfree(draft->exercises);
-    // }
 
     free(draft);
 }
@@ -149,14 +188,6 @@ void free_current_routine(CurrentRoutine* current) {
     }
 
     free_history_exercises(&current->exercises);
-    // if (current->exercises != NULL) {
-    //     for (int i = 0; i < arrlen(current->exercises); i++) {
-    //         free(current->exercises[i].title);
-    //         arrfree(current->exercises[i].reps);
-    //     }
-    //
-    //     arrfree(current->exercises);
-    // }
 
     free(current);
 }
