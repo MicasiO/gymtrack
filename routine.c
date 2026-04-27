@@ -23,7 +23,6 @@ void routine_arr_remove(Routine** routines_ptr, char* id) {
             if (routines[i].exercises != NULL) {
                 for (int j = 0; j < arrlen(routines[i].exercises); j++) {
                     free(routines[i].exercises[j].title);
-                    arrfree(routines[i].exercises[j].reps);
                 }
                 arrfree(routines[i].exercises);
             }
@@ -44,10 +43,7 @@ void exercise_arr_add(Exercise** exercises, Form form) {
     char* reps_str = get_field_value(&form.fields[2]);
 
     ex.sets = atoi(sets_str);
-    ex.reps = NULL;
-    for (int i = 0; i < ex.sets; i++) {
-        arrput(ex.reps, atoi(reps_str));
-    }
+    ex.reps = atoi(reps_str);
 
     free(sets_str);
     free(reps_str);
@@ -70,6 +66,38 @@ CurrentRoutine* get_last_routine(CurrentRoutine* routines_hist, char* id) {
     return NULL;
 }
 
+void update_routine_last_done(Routine** routines_ptr, char* id) {
+    if (id == NULL || routines_ptr == NULL) {
+        return;
+    }
+
+    Routine* routines = *routines_ptr;
+
+    for (int i = arrlen(routines) - 1; i >= 0; i--) {
+        if (strcmp(routines[i].id, id) == 0) {
+            routines[i].last_done = time(NULL);
+            serialize_routines(routines);
+            return;
+        }
+    }
+}
+
+time_t get_routine_last_done(Routine** routines_ptr, char* id) {
+    if (id == NULL || routines_ptr == NULL) {
+        return 0;
+    }
+
+    Routine* routines = *routines_ptr;
+
+    for (int i = arrlen(routines) - 1; i >= 0; i--) {
+        if (strcmp(routines[i].id, id) == 0) {
+            return routines[i].last_done;
+        }
+    }
+
+    return 0;
+}
+
 CurrentRoutine* init_current_routine(Routine* routine) {
     if (routine == NULL) {
         return NULL;
@@ -78,7 +106,7 @@ CurrentRoutine* init_current_routine(Routine* routine) {
     CurrentRoutine* current = (CurrentRoutine*)malloc(sizeof(CurrentRoutine));
     current->title = strdup(routine->title);
     current->id = strdup(routine->id);
-    current->date = time(NULL);
+    current->last_done = time(NULL);
     current->exercises = NULL;
     current->index = 0;
 
@@ -90,7 +118,7 @@ CurrentRoutine* init_current_routine(Routine* routine) {
         current_ex.sets = ex.sets;
         current_ex.reps = NULL;
         for (int j = 0; j < ex.sets; j++) {
-            arrput(current_ex.reps, ex.reps[j]);
+            arrput(current_ex.reps, ex.reps);
         }
         current_ex.done = false;
 
@@ -158,7 +186,7 @@ void free_routines(Routine* routines) {
                 if (routines[i].exercises[j].title != NULL) {
                     free(routines[i].exercises[j].title);
                 }
-                arrfree(routines[i].exercises[j].reps);
+                // arrfree(routines[i].exercises[j].reps);
             }
             arrfree(routines[i].exercises);
         }

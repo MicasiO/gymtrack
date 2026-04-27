@@ -1,5 +1,6 @@
 #include "menu.h"
 #include <ncurses.h>
+#include <time.h>
 #include "exercise.h"
 #include "routine.h"
 #include "stb_ds.h"
@@ -117,6 +118,8 @@ enum state show_workout_menu(AppState* app_state) {
     keypad(win, true);
 
     CurrentRoutine* current_routine = app_state->current;
+    time_t current_routine_last_done =
+        get_routine_last_done(&app_state->routines, current_routine->id);
 
     int curr_idx = 0;
     enum state next_state = -1;
@@ -124,7 +127,15 @@ enum state show_workout_menu(AppState* app_state) {
     while (next_state == -1) {
         werase(win);
         box(win, 0, 0);
-        mvwprintw(win, 2, 2, "%s:", current_routine->title);
+        mvwprintw(win, 2, 2, "%s", current_routine->title);
+
+        if (current_routine_last_done != 0) {
+            char time_str[12];
+            struct tm* timeinfo = localtime(&current_routine_last_done);
+            strftime(time_str, sizeof(time_str), "%Y %b %d", timeinfo);
+            time_str[11] = '\0';
+            mvwprintw(win, 2, WIN_WIDTH - 25, "Last done: %s", time_str);
+        }
 
         for (int i = 0; i < 10; i++) {
             if (i + curr_idx >= arrlen(current_routine->exercises)) {

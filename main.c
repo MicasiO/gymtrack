@@ -40,11 +40,9 @@ int main() {
 
     app_state.body_win = body_win;
 
-    enum state state;
-
     show_header(header_win);
-    state = show_main_menu(&app_state);
 
+    enum state state = show_main_menu(&app_state);
     while (state != STATE_QUIT) {
         touchwin(stdscr);
         refresh();

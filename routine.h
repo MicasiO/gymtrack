@@ -18,7 +18,7 @@ typedef struct CurrentRoutine {
     char* title;
     char* id;
     CurrentExercise* exercises;
-    time_t date;
+    time_t last_done;
     long long index;
 } CurrentRoutine;
 
@@ -26,6 +26,9 @@ void routine_arr_add(Routine** routines_ptr, Routine* routine);
 void routine_arr_remove(Routine** routines_ptr, char* id);
 void exercise_arr_add(Exercise** exercises, Form form);
 void generate_routine_id(Routine* routines, Routine* routine);
+
+void update_routine_last_done(Routine** routines_ptr, char* id);
+time_t get_routine_last_done(Routine** routines_ptr, char* id);
 
 CurrentRoutine* get_last_routine(CurrentRoutine* history, char* id);
 CurrentRoutine* init_current_routine(Routine* routine);

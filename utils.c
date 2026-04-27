@@ -65,7 +65,7 @@ void serialize_routines(Routine* routines) {
 
         fprintf(file, "        \"id\": \"%s\",\n", routines[i].id);
         fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
-        fprintf(file, "        \"last_done\": 0,\n");
+        fprintf(file, "        \"last_done\": %ld,\n", routines[i].last_done);
         fprintf(file, "        \"exercises\": [\n");
         int ex_count = arrlen(routines[i].exercises);
         for (int j = 0; j < ex_count; j++) {
@@ -73,14 +73,8 @@ void serialize_routines(Routine* routines) {
             Exercise ex = routines[i].exercises[j];
             fprintf(file, "               \"title\": \"%s\",\n", ex.title);
             fprintf(file, "               \"sets\": %d,\n", ex.sets);
-            fprintf(file, "               \"reps\": [");
-            for (int r = 0; r < ex.sets; r++) {
-                if (r == ex.sets - 1) {
-                    fprintf(file, "%d]\n", ex.reps[r]);
-                } else {
-                    fprintf(file, "%d, ", ex.reps[r]);
-                }
-            }
+            fprintf(file, "               \"reps\": %d\n", ex.reps);
+
             if (j == ex_count - 1) {
                 fprintf(file, "            }\n");
             } else {
@@ -164,13 +158,7 @@ void deserialize_routines(Routine** routines) {
                         } else if (strcmp(prop->name->string, "sets") == 0) {
                             ex.sets = atoi(json_value_as_number(prop->value)->number);
                         } else if (strcmp(prop->name->string, "reps") == 0) {
-                            struct json_array_s* reps_arr = json_value_as_array(prop->value);
-                            struct json_array_element_s* reps_el = reps_arr->start;
-                            ex.reps = NULL;
-                            while (reps_el) {
-                                arrput(ex.reps, atoi(json_value_as_number(reps_el->value)->number));
-                                reps_el = reps_el->next;
-                            }
+                            ex.reps = atoi(json_value_as_number(prop->value)->number);
                         }
                         prop = prop->next;
                     }
@@ -204,7 +192,7 @@ void serialize_history(CurrentRoutine* routines) {
 
         fprintf(file, "        \"id\": \"%s\",\n", routines[i].id);
         fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
-        fprintf(file, "        \"last_done\": %ld,\n", routines[i].date);
+        fprintf(file, "        \"last_done\": %ld,\n", routines[i].last_done);
         fprintf(file, "        \"exercises\": [\n");
         int ex_count = arrlen(routines[i].exercises);
         for (int j = 0; j < ex_count; j++) {
@@ -288,7 +276,7 @@ void deserialize_history(CurrentRoutine** routines) {
             } else if (strcmp(prop->name->string, "id") == 0) {
                 r.id = strdup(json_value_as_string(prop->value)->string);
             } else if (strcmp(prop->name->string, "last_done") == 0) {
-                r.date = (time_t)atoll(json_value_as_number(prop->value)->number);
+                r.last_done = (time_t)atoll(json_value_as_number(prop->value)->number);
             } else if (strcmp(prop->name->string, "exercises") == 0) {
                 struct json_array_s* ex_arr = json_value_as_array(prop->value);
                 struct json_array_element_s* ex_el = ex_arr->start;

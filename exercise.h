@@ -3,7 +3,7 @@
 
 typedef struct Exercise {
     char* title;
-    int* reps;
+    int reps;
     int sets;
 } Exercise;
 

@@ -357,6 +357,7 @@ enum state show_finish_routine(AppState* app_state) {
                 break;
             case 10:  // enter
                 if (is_routine_done(app_state->current)) {
+                    update_routine_last_done(&app_state->routines, app_state->current->id);
                     arrput(app_state->history, *app_state->current);
                     serialize_history(app_state->history);
 

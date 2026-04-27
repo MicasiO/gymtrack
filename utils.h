@@ -32,14 +32,14 @@ typedef struct {
 } Stopwatch;
 
 typedef struct AppState {
-    Routine draft;  // draft for routine creation
-    Routine* routines;
+    Routine draft;              // draft for routine creation
+    Routine* routines;          // routine templates
     CurrentRoutine* current;    // active routine
     CurrentExercise ex_backup;  // backup exercise if user cancels exercise
     CurrentRoutine* history;    // previously done rouines;
-    WINDOW* body_win;
-    Stopwatch* stopwatch;
-    int reps_idx;
+    WINDOW* body_win;           //
+    Stopwatch* stopwatch;       //
+    int reps_idx;               // counter for entering reps for exercises
 } AppState;
 
 void init_app_state(AppState* app_state);
