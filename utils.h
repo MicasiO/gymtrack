@@ -9,6 +9,8 @@ enum state {
     STATE_NULL,
     STATE_MENU_MAIN,
     STATE_MENU_WORKOUT,
+    STATE_STATS_WORKOUT,
+    STATE_STATS_EXERCISE,
     STATE_CREATE_TITLE,
     STATE_CREATE_WORKOUT,
     STATE_CREATE_CANCEL_EX,
@@ -67,5 +69,5 @@ void stop_stopwatch(Stopwatch* sw);
 double get_stopwatch(Stopwatch* sw);
 
 void generate_uuid(char* buf);
-
+void mvwprintw_vertical(WINDOW* win, int start_y, int start_x, const char* text);
 #endif

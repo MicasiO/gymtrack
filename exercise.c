@@ -2,6 +2,7 @@
 #include "form.h"
 #include "routine.h"
 #include "stb_ds.h"
+#include "utils.h"
 
 void exercise_arr_add(Exercise** exercises_ptr, Form form) {
     Exercise* exercises = *exercises_ptr;
@@ -20,6 +21,30 @@ void exercise_arr_add(Exercise** exercises_ptr, Form form) {
     arrput(exercises, ex);
 
     *exercises_ptr = exercises;
+}
+
+CurrentExercise** get_exercise_history(CurrentRoutine** history_ptr, char* id) {
+    CurrentRoutine* history = *history_ptr;
+
+    if (history == NULL || id == NULL) {
+        return NULL;
+    }
+
+    CurrentExercise** exercise_hist = NULL;
+
+    for (int i = arrlen(history) - 1; i >= 0; i--) {
+        for (int j = arrlen(history[i].exercises) - 1; j >= 0; j--) {
+            if (history[i].exercises[j].done != true) {
+                continue;
+            }
+
+            if (strcmp(history[i].exercises[j].id, id) == 0) {
+                arrput(exercise_hist, &history[i].exercises[j]);
+            }
+        }
+    }
+
+    return exercise_hist;
 }
 
 void generate_exercise_id(Exercise* exercise) {

@@ -1,5 +1,6 @@
 #include <locale.h>
 #include "active.h"
+#include "stats.h"
 #define STB_DS_IMPLEMENTATION
 #include <assert.h>
 #include <ncurses.h>
@@ -9,8 +10,8 @@
 #include "stb_ds.h"
 #include "utils.h"
 
-void show_header(WINDOW* header_win) {
-    draw_logo(header_win, 0, 0);
+void display_header(WINDOW* header_win) {
+    draw_logo(header_win, 0, 3);
     wrefresh(header_win);
 }
 
@@ -41,7 +42,7 @@ int main() {
 
     app_state.body_win = body_win;
 
-    show_header(header_win);
+    display_header(header_win);
 
     enum state state = show_main_menu(&app_state);
     while (state != STATE_QUIT) {
@@ -60,6 +61,12 @@ int main() {
                 break;
             case STATE_MENU_WORKOUT:
                 state = show_workout_menu(&app_state);
+                break;
+            case STATE_STATS_WORKOUT:
+                state = show_workout_stats(&app_state);
+                break;
+            case STATE_STATS_EXERCISE:
+                state = show_exercise_stats(&app_state);
                 break;
             case STATE_CREATE_TITLE:
                 state = show_create_title(&app_state);

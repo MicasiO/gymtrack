@@ -16,7 +16,7 @@ enum state show_active(AppState* app_state) {
     curs_set(0);
     keypad(win, true);
 
-    wtimeout(win, 100);  // prevent input blocking for timer
+    wtimeout(win, 100);  // prevent input blocking for stopwatch
 
     CurrentRoutine* previous = get_last_routine(app_state->history, app_state->current->id);
     CurrentExercise* prev_exercises = NULL;
@@ -65,11 +65,12 @@ enum state show_active(AppState* app_state) {
         }
 
         if (curr_idx > 0 && curr_idx < arrlen(exercises) - 1) {
-            mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
+            mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+            mvwprintw(win, WIN_HEIGHT - 4, WIN_WIDTH - 9, "[n]ext");
         } else if (curr_idx > 0) {
             mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
         } else if (curr_idx < arrlen(exercises) - 1) {
-            mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+            mvwprintw(win, WIN_HEIGHT - 4, WIN_WIDTH - 9, "[n]ext");
         }
 
         if (previous != NULL && prev_exercises[curr_idx].done != false) {
@@ -78,7 +79,8 @@ enum state show_active(AppState* app_state) {
         }
 
         mvwprintw(win, WIN_HEIGHT - 5, 2, "[f] finish session");
-        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] finished exercise");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+        mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 28, "[enter] finished exercise");
 
         wrefresh(win);
 
@@ -118,6 +120,10 @@ enum state show_active(AppState* app_state) {
                 break;
             case 'f':
                 stop_stopwatch(app_state->stopwatch);
+                double total_seconds = get_stopwatch(app_state->stopwatch);
+                int seconds = (int)total_seconds % 60;
+                app_state->current->duration = seconds;
+
                 next_state = STATE_ACTIVE_FINISHED;
                 break;
             default:
@@ -153,7 +159,8 @@ enum state show_active_sets(AppState* app_state) {
     long long idx = app_state->current->index;
     CurrentExercise* curr_ex = &app_state->current->exercises[idx];
     mvwprintw(win, 2, 2, "%s", curr_ex->title);
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[enter] continue");
     wrefresh(win);
     wrefresh(form_win);
 
@@ -217,7 +224,9 @@ enum state show_active_reps(AppState* app_state) {
     int idx = app_state->current->index;
 
     mvwprintw(win, 2, 2, "Set %d", app_state->reps_idx + 1);
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[enter] continue");
     wrefresh(win);
     wrefresh(form_win);
 
@@ -280,7 +289,8 @@ enum state show_finish_exercise(AppState* app_state) {
     int idx = app_state->current->index;
 
     mvwprintw(win, 2, 2, "%s", app_state->current->exercises[idx].title);
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[enter] continue");
     wrefresh(win);
     wrefresh(form_win);
 
@@ -338,11 +348,12 @@ enum state show_finish_routine(AppState* app_state) {
 
         if (arrlen(current_routine->exercises) > 10) {
             if (curr_idx > 0 && curr_idx + 10 < arrlen(current_routine->exercises)) {
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
+                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+                mvwprintw(win, WIN_HEIGHT - 4, WIN_WIDTH - 9, "[n]ext");
             } else if (curr_idx > 0) {
                 mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
             } else if (curr_idx + 5 < arrlen(current_routine->exercises)) {
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+                mvwprintw(win, WIN_HEIGHT - 4, WIN_WIDTH - 9, "[n]ext");
             }
         }
 
@@ -357,8 +368,6 @@ enum state show_finish_routine(AppState* app_state) {
                 break;
             case 10:  // enter
                 finish_routine(app_state);
-
-                app_state->current = NULL;
 
                 next_state = STATE_MENU_MAIN;
                 break;
@@ -400,6 +409,8 @@ void finish_routine(AppState* app_state) {
     } else {
         free_current_routine(app_state->current);
     }
+
+    app_state->current = NULL;
 }
 
 void draw_formatted_reps(WINDOW* win, int sets, int* reps) {

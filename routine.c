@@ -92,6 +92,7 @@ CurrentRoutine* init_current_routine(Routine* routine) {
     current->title = strdup(routine->title);
     current->id = strdup(routine->id);
     current->last_done = time(NULL);
+    current->duration = 0;
     current->exercises = NULL;
     current->index = 0;
 
@@ -117,7 +118,8 @@ CurrentRoutine* init_current_routine(Routine* routine) {
 
 CurrentRoutine** get_routine_history(CurrentRoutine** history_ptr, char* id) {
     CurrentRoutine* history = *history_ptr;
-    if (history == NULL) {
+
+    if (history == NULL || id == NULL) {
         return NULL;
     }
 

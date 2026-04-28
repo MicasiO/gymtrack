@@ -35,7 +35,8 @@ enum state show_create_title(AppState* app_state) {
     add_field_form(&form, "Workout title:", FIELD_STRING, 20);
 
     show_form(&form);
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] return to menu | [enter] continue");
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] return to menu");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[enter] continue");
     wrefresh(win);
     wrefresh(form_win);
 
@@ -78,7 +79,8 @@ enum state show_create_workout(AppState* app_state) {
     add_field_form(&form, "Reps:", FIELD_NUMBER, 3);
 
     show_form(&form);
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] continue");
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[enter] continue");
     wrefresh(win);
     wrefresh(form_win);
 
@@ -125,7 +127,8 @@ enum state show_create_continue(AppState* app_state) {
         mvwprintw(win, 4 + i, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps);
     }
 
-    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] finish | [enter] add exercise");
+    mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] finish");
+    mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 23, "[enter] add exercise");
     wrefresh(win);
     wrefresh(form_win);
 

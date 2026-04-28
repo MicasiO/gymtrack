@@ -52,15 +52,17 @@ enum state show_main_menu(AppState* app_state) {
 
         if (arrlen(app_state->routines) > 5) {
             if (curr_idx > 0 && curr_idx + 5 < arrlen(app_state->routines)) {
-                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious | [n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious");
+                mvwprintw(win, WIN_HEIGHT - 5, WIN_WIDTH - 9, "[n]ext");
             } else if (curr_idx > 0) {
                 mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious");
             } else if (curr_idx + 5 < arrlen(app_state->routines)) {
-                mvwprintw(win, WIN_HEIGHT - 5, 2, "[n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, WIN_WIDTH - 9, "[n]ext");
             }
         }
 
-        mvwprintw(win, WIN_HEIGHT - 3, 2, "[q]uit | [c]reate workout");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[q]uit");
+        mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 19, "[c]reate workout");
 
         wrefresh(win);
 
@@ -148,16 +150,19 @@ enum state show_workout_menu(AppState* app_state) {
 
         if (arrlen(current_routine->exercises) > 10) {
             if (curr_idx > 0 && curr_idx + 10 < arrlen(current_routine->exercises)) {
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious | [n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious");
+                mvwprintw(win, WIN_HEIGHT - 5, WIN_WIDTH - 9, "[n]ext");
             } else if (curr_idx > 0) {
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[p]revious");
+                mvwprintw(win, WIN_HEIGHT - 5, 2, "[p]revious");
             } else if (curr_idx + 5 < arrlen(current_routine->exercises)) {
-                mvwprintw(win, WIN_HEIGHT - 4, 2, "[n]ext");
+                mvwprintw(win, WIN_HEIGHT - 5, WIN_WIDTH - 9, "[n]ext");
             }
         }
 
-        mvwprintw(win, WIN_HEIGHT - 5, 2, "[d]elete");
-        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back | [enter] start");
+        mvwprintw(win, WIN_HEIGHT - 4, 2, "[d]elete");
+        mvwprintw(win, WIN_HEIGHT - 4, WIN_WIDTH - 15, "[s]how stats");
+        mvwprintw(win, WIN_HEIGHT - 3, 2, "[esc] back");
+        mvwprintw(win, WIN_HEIGHT - 3, WIN_WIDTH - 16, "[enter] start");
 
         wrefresh(win);
 
@@ -173,6 +178,9 @@ enum state show_workout_menu(AppState* app_state) {
                 app_state->stopwatch = malloc(sizeof(Stopwatch));
                 start_stopwatch(app_state->stopwatch);
                 next_state = STATE_ACTIVE;
+                break;
+            case 's':
+                next_state = STATE_STATS_WORKOUT;
                 break;
             case 'd':
                 routine_arr_remove(&app_state->routines, current_routine->id);

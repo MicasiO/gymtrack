@@ -195,6 +195,7 @@ void serialize_history(CurrentRoutine* routines) {
 
         fprintf(file, "        \"id\": \"%s\",\n", routines[i].id);
         fprintf(file, "        \"title\": \"%s\",\n", routines[i].title);
+        fprintf(file, "        \"duration\": %d,\n", routines[i].duration);
         fprintf(file, "        \"last_done\": %ld,\n", routines[i].last_done);
         fprintf(file, "        \"exercises\": [\n");
         int ex_count = arrlen(routines[i].exercises);
@@ -277,6 +278,8 @@ void deserialize_history(CurrentRoutine** routines) {
         while (prop) {
             if (strcmp(prop->name->string, "title") == 0) {
                 r.title = strdup(json_value_as_string(prop->value)->string);
+            } else if (strcmp(prop->name->string, "duration") == 0) {
+                r.duration = atoi(json_value_as_number(prop->value)->number);
             } else if (strcmp(prop->name->string, "id") == 0) {
                 r.id = strdup(json_value_as_string(prop->value)->string);
             } else if (strcmp(prop->name->string, "last_done") == 0) {
@@ -395,4 +398,21 @@ void generate_uuid(char* buf) {
         }
     }
     buf[36] = '\0';
+}
+
+void mvwprintw_vertical(WINDOW* win, int start_y, int start_x, const char* text) {
+    if (text == NULL || win == NULL)
+        return;
+
+    int max_y, max_x;
+    getmaxyx(win, max_y, max_x);
+
+    int len = strlen(text);
+    for (int i = 0; i < len; i++) {
+        if (start_y + i >= max_y) {
+            break;
+        }
+
+        mvwaddch(win, start_y + i, start_x, text[i]);
+    }
 }

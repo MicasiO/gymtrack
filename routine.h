@@ -20,6 +20,7 @@ typedef struct CurrentRoutine {
     CurrentExercise* exercises;
     time_t last_done;
     long long index;
+    int duration;
 } CurrentRoutine;
 
 void routine_arr_add(Routine** routines_ptr, Routine* routine);
