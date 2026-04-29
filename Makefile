@@ -2,8 +2,15 @@ TARGET = gymtrack
 
 CC = gcc
 
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+	FLAGS = -lncurses -lform -lm 
+else
+	FLAGS = -lncursesw -lform -lm 
+endif
+
 TESTFLAGS = -g -fsanitize=address -lncursesw -lform -lm -Wall
-FLAGS =  -lncursesw -lform -lm 
 
 SOURCES = main.c create.c utils.c form.c menu.c routine.c active.c exercise.c stats.c serializer.c
 
