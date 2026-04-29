@@ -7,6 +7,7 @@
 #include <ncurses/form.h>
 #include "create.h"
 #include "menu.h"
+#include "serializer.h"
 #include "stb_ds.h"
 #include "utils.h"
 
@@ -16,7 +17,7 @@ void display_header(WINDOW* header_win) {
 }
 
 int main() {
-    AppState app_state;
+    AppState app_state = {0};
 
     init_app_state(&app_state);
 

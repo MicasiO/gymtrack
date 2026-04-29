@@ -2,6 +2,7 @@
 #include <string.h>
 #include <time.h>
 #include "exercise.h"
+#include "serializer.h"
 #include "stb_ds.h"
 #include "utils.h"
 

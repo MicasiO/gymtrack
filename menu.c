@@ -41,7 +41,7 @@ enum state show_main_menu(AppState* app_state) {
             if (i + curr_idx >= arrlen(app_state->routines)) {
                 break;
             }
-            mvwprintw(win, i + 4, 3, "[%d] %s", i + 1, app_state->routines[i + curr_idx].title);
+            mvwprintw(win, i + 4, 2, "[%d] %s", i + 1, app_state->routines[i + curr_idx].title);
         }
 
         if (arrlen(app_state->routines) != 0) {
@@ -145,7 +145,7 @@ enum state show_workout_menu(AppState* app_state) {
             }
 
             CurrentExercise ex = current_routine->exercises[i + curr_idx];
-            mvwprintw(win, i + 4, 3, "%s: %d x %d", ex.title, ex.sets, ex.reps[0]);
+            mvwprintw(win, i + 4, 2, "%s: %d x %d", ex.title, ex.sets, ex.reps[0]);
         }
 
         if (arrlen(current_routine->exercises) > 10) {

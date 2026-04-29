@@ -52,15 +52,6 @@ int is_str_empty(char* str);
 
 void free_app_state(AppState* app_state);
 
-void serialize_routines(Routine* routines);
-void deserialize_routines(Routine** routines);
-
-void serialize_history(CurrentRoutine* routines);
-void deserialize_history(CurrentRoutine** routines);
-
-void serialize_all(Routine* routines);
-void deserialize_all(Routine** routines);
-
 void print_log(const char* s, ...);
 void draw_logo(WINDOW* win, int start_y, int start_x);
 

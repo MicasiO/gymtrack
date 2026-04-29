@@ -16,10 +16,7 @@ enum state show_workout_stats(AppState* app_state) {
     curs_set(0);
     keypad(win, true);
 
-    int curr_idx = 0;
-
     bool empty_exercise_data = false;
-    int average_duration = -1;
 
     CurrentRoutine** routine_hist =
         get_routine_history(&app_state->history, app_state->current->id);

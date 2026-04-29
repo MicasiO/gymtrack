@@ -4,6 +4,7 @@
 #include "exercise.h"
 #include "form.h"
 #include "routine.h"
+#include "serializer.h"
 #include "stb_ds.h"
 #include "utils.h"
 
