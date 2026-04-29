@@ -1,6 +1,7 @@
 # gymtrack
 
 A terminal-based workout tracker written in C
+
 Works on Linux and macOS
 
 ## Features
