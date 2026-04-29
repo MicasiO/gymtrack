@@ -23,6 +23,7 @@ clean:
 	rm -f $(TARGET)
 
 install: $(TARGET)
+	mkdir -p /usr/local/bin
 	cp $(TARGET) /usr/local/bin/
 
 uninstall:
