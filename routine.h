@@ -2,6 +2,7 @@
 #define ROUTINE_H
 
 #include <stdbool.h>
+#include <time.h>
 #include "exercise.h"
 #include "stdlib.h"
 
