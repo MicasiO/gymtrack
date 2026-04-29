@@ -21,7 +21,7 @@ enum state show_workout_stats(AppState* app_state) {
     CurrentRoutine** routine_hist =
         get_routine_history(&app_state->history, app_state->current->id);
 
-    if (arrlen(routine_hist) <= 0) {
+    if (arrlen(routine_hist) <= 0 || routine_hist == NULL) {
         empty_exercise_data = true;
     }
 
@@ -56,8 +56,10 @@ enum state show_workout_stats(AppState* app_state) {
                 next_state = STATE_MENU_WORKOUT;
                 break;
             case 'e':
-                arrfree(routine_hist);
-                next_state = STATE_STATS_EXERCISE;
+                if (!empty_exercise_data) {
+                    arrfree(routine_hist);
+                    next_state = STATE_STATS_EXERCISE;
+                }
                 break;
             default:
                 break;
