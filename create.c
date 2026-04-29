@@ -1,11 +1,16 @@
 #include "create.h"
 #include <ncurses.h>
-#include <ncurses/form.h>
 #include "exercise.h"
 #include "form.h"
 #include "routine.h"
 #include "stb_ds.h"
 #include "utils.h"
+
+#ifdef __linux__
+#include <ncurses/form.h>
+#else
+#include <form.h>
+#endif
 
 enum state show_create_title(AppState* app_state) {
     if (app_state->draft.title != NULL) {

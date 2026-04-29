@@ -4,12 +4,17 @@
 #define STB_DS_IMPLEMENTATION
 #include <assert.h>
 #include <ncurses.h>
-#include <ncurses/form.h>
 #include "create.h"
 #include "menu.h"
 #include "serializer.h"
 #include "stb_ds.h"
 #include "utils.h"
+
+#ifdef __linux__
+#include <ncurses/form.h>
+#else
+#include <form.h>
+#endif
 
 void display_header(WINDOW* header_win) {
     draw_logo(header_win, 0, 3);

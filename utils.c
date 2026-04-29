@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <bits/time.h>
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdarg.h>

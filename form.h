@@ -2,8 +2,12 @@
 #define FORM_H_
 
 #include <ncurses.h>
-#include <ncurses/form.h>
 #include "utils.h"
+#ifdef __linux__
+#include <ncurses/form.h>
+#else
+#include <form.h>
+#endif
 
 enum field_type { FIELD_STRING, FIELD_NUMBER, FIELD_CHECKBOX };
 
