@@ -1,7 +1,12 @@
 #include "form.h"
 #include <ctype.h>
 #include <ncurses.h>
+#ifdef __linux__
 #include <ncurses/form.h>
+#else
+#include <form.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include "stb_ds.h"
