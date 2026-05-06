@@ -8,7 +8,7 @@
 
 void select_workout(AppState* app_state, enum state* next_state, const char ch, int curr_idx) {
     int idx = curr_idx + (ch - '0') - 1;
-    if (idx > arrlen(app_state->routines)) {
+    if (idx >= arrlen(app_state->routines)) {
         return;
     }
 
