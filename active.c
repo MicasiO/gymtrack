@@ -122,8 +122,7 @@ enum state show_active(AppState* app_state) {
             case 'f':
                 stop_stopwatch(app_state->stopwatch);
                 double total_seconds = get_stopwatch(app_state->stopwatch);
-                int seconds = (int)total_seconds % 60;
-                app_state->current->duration = seconds;
+                app_state->current->duration = (int)total_seconds;
 
                 next_state = STATE_ACTIVE_FINISHED;
                 break;
